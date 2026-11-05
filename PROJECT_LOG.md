@@ -38,6 +38,7 @@ Session B (this log's first session):
 12. "Do the review" / "Commit the edit and then do the whole review" -> Task 11 review + final whole-branch review (Opus). Verdict: no data-loss path; six Important issues (section 4). The lint fix had already been committed by the implementer (`5a8c5b8`).
 13. "compact all the changes after every prompt into a file for future AI sessions, then continue with all the necessary fixing" -> this file; the fix pass for the six Important findings (four commits) and its re-review.
 14. (session resumed after context compaction; no new user text) -> ran the scoped re-review (clean), recorded it here, committed this log + AGENTS.md + docs/history, pushed the branch for a Vercel preview.
+15. "on the expenses the reload does not work" / "Still does the same" -> could not reproduce (preview routes 200, no headless browser available); asked for URL + symptom. "merge to main and lets see from there" -> merged `feat/v2-screens-features` into `main` (`d97730d`), pushed; production redeployed, `/expenses`, `/calendar`, `/settings` now return 200 on https://cross-platform-app-navy.vercel.app. Reload symptom still unconfirmed on the phone.
 
 ## 4. Plan v2 execution record (branch `feat/v2-screens-features`, base `7ecfac1`)
 
