@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 import { Screen } from '../../src/components/Screen';
 import { Typography } from '../../src/components/Typography';
+import { MonthSwitcher } from '../../src/components/MonthSwitcher';
 import { CalendarGrid } from '../../src/components/CalendarGrid';
 import { EventItem } from '../../src/components/EventItem';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -14,11 +14,6 @@ import { useTheme } from '../../src/hooks/useTheme';
 import { useSwipe } from '../../src/hooks/useSwipe';
 import { startOfDay } from '../../src/lib/dates';
 import { spacing } from '../../src/constants/theme';
-
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
 
 export default function CalendarScreen() {
   const { colors } = useTheme();
@@ -84,25 +79,12 @@ export default function CalendarScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <Pressable
-          onPress={prevMonth}
-          accessibilityRole="button"
-          accessibilityLabel="Previous month"
-          style={styles.iconBtn}
-        >
-          <Feather name="chevron-left" size={24} color={colors.text} />
-        </Pressable>
-        <Typography variant="h2" style={styles.title}>
-          {MONTHS[currentMonth.month]} {currentMonth.year}
-        </Typography>
-        <Pressable
-          onPress={nextMonth}
-          accessibilityRole="button"
-          accessibilityLabel="Next month"
-          style={styles.iconBtn}
-        >
-          <Feather name="chevron-right" size={24} color={colors.text} />
-        </Pressable>
+        <MonthSwitcher
+          year={currentMonth.year}
+          month={currentMonth.month}
+          onPrev={prevMonth}
+          onNext={nextMonth}
+        />
         <Pressable
           onPress={jumpToToday}
           accessibilityRole="button"
@@ -160,13 +142,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.md,
-  },
-  title: { flex: 1, textAlign: 'center' },
-  iconBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   todayBtn: {
     minWidth: 44,

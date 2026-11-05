@@ -13,3 +13,13 @@ export function startOfNextDay(ts: number): number {
 export function isSameLocalDay(a: number, b: number): boolean {
   return startOfDay(a) === startOfDay(b);
 }
+
+/** Move a (year, month 0-11) pair by `delta` months, wrapping across years. */
+export function shiftMonth(
+  year: number,
+  month: number,
+  delta: number,
+): { year: number; month: number } {
+  const idx = year * 12 + month + delta;
+  return { year: Math.floor(idx / 12), month: ((idx % 12) + 12) % 12 };
+}

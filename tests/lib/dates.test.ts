@@ -37,3 +37,20 @@ describe('dates', () => {
     expect(isSameLocalDay(next - 1, start)).toBe(true);
   });
 });
+
+describe('shiftMonth', () => {
+  const { shiftMonth } = require('../../src/lib/dates');
+  it('wraps Dec to Jan of next year', () => {
+    expect(shiftMonth(2025, 11, 1)).toEqual({ year: 2026, month: 0 });
+  });
+  it('wraps Jan to Dec of previous year', () => {
+    expect(shiftMonth(2026, 0, -1)).toEqual({ year: 2025, month: 11 });
+  });
+  it('handles +/-12 months', () => {
+    expect(shiftMonth(2026, 4, 12)).toEqual({ year: 2027, month: 4 });
+    expect(shiftMonth(2026, 4, -12)).toEqual({ year: 2025, month: 4 });
+  });
+  it('moves within a year', () => {
+    expect(shiftMonth(2026, 4, 1)).toEqual({ year: 2026, month: 5 });
+  });
+});
