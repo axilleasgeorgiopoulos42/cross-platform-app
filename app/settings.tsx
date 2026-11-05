@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Typography } from '../src/components/Typography';
 import { Button } from '../src/components/Button';
@@ -50,19 +50,42 @@ function Chip({ label, selected, onPress }: ChipProps) {
 
 export default function SettingsScreen() {
   const { colors } = useTheme();
-  const { settings, error: settingsError, setCurrency, setTheme } = useSettingsStore();
-  const { error: backupError, exportBackup, previewBackup, importBackup, clearData } =
-    useBackupStore();
+  const {
+    settings,
+    error: settingsError,
+    setCurrency,
+    setTheme,
+    clearError: clearSettingsError,
+  } = useSettingsStore();
+  const {
+    error: backupError,
+    exportBackup,
+    previewBackup,
+    importBackup,
+    clearData,
+    clearError: clearBackupError,
+  } = useBackupStore();
 
   const [info, setInfo] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const clearAllErrors = useCallback(() => {
+    setFileError(null);
+    clearBackupError();
+    clearSettingsError();
+  }, [clearBackupError, clearSettingsError]);
+
+  useEffect(() => {
+    clearAllErrors();
+    return clearAllErrors;
+  }, [clearAllErrors]);
+
   const shownError = fileError ?? backupError ?? settingsError;
 
   const handleExport = async () => {
     setInfo(null);
-    setFileError(null);
+    clearAllErrors();
     const result = await exportBackup();
     if (!result) return;
     try {
@@ -76,7 +99,7 @@ export default function SettingsScreen() {
   const handleImport = async () => {
     if (busy) return;
     setInfo(null);
-    setFileError(null);
+    clearAllErrors();
     setBusy(true);
     try {
       let text: string | null;
@@ -107,7 +130,7 @@ export default function SettingsScreen() {
   const handleClear = async () => {
     if (busy) return;
     setInfo(null);
-    setFileError(null);
+    clearAllErrors();
     setBusy(true);
     try {
       const ok = await confirmAction(

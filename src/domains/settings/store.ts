@@ -10,6 +10,7 @@ interface SettingsStore {
   error: string | null;
 
   load(): Promise<void>;
+  clearError(): void;
   setCurrency(c: Currency): Promise<void>;
   setTheme(t: ThemePreference): Promise<void>;
 }
@@ -18,6 +19,10 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   settings: DEFAULT_SETTINGS,
   loaded: false,
   error: null,
+
+  clearError() {
+    set({ error: null });
+  },
 
   async load() {
     try {

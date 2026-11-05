@@ -14,6 +14,7 @@ interface Counts {
 interface BackupStore {
   error: string | null;
 
+  clearError(): void;
   exportBackup(): Promise<{ filename: string; json: string } | null>;
   /** Validates only; touches nothing. Returns counts, or null with `error` set. */
   previewBackup(text: string): Counts | null;
@@ -32,6 +33,10 @@ async function refreshStores(): Promise<void> {
 
 export const useBackupStore = create<BackupStore>((set) => ({
   error: null,
+
+  clearError() {
+    set({ error: null });
+  },
 
   async exportBackup() {
     set({ error: null });
