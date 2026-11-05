@@ -31,7 +31,7 @@ import {
   type TransactionFilter,
 } from '../../src/domains/expenses/search';
 import { useSettingsStore } from '../../src/domains/settings/store';
-import { groupByCategory, summarize } from '../../src/domains/expenses/summary';
+import { groupByCategory, incomeEntries, summarize } from '../../src/domains/expenses/summary';
 import { formatMoney } from '../../src/lib/money';
 import { useTodayStart } from '../../src/hooks/useTodayStart';
 import { useTheme } from '../../src/hooks/useTheme';
@@ -62,7 +62,9 @@ export default function ExpensesScreen() {
   const summary = useMemo(() => summarize(rangeTxs), [rangeTxs]);
   const buckets = useMemo(() => bucketExpenses(rangeTxs, range), [rangeTxs, range]);
   const groups = useMemo(() => groupByCategory(rangeTxs), [rangeTxs]);
+  const income = useMemo(() => incomeEntries(rangeTxs), [rangeTxs]);
   const hasExpenses = groups.length > 0;
+  const hasAny = hasExpenses || income.entries.length > 0;
 
   const toggleFilter = useCallback(() => {
     if (filterOpen) {
@@ -158,10 +160,17 @@ export default function ExpensesScreen() {
           </View>
         </Card>
 
-        {hasExpenses ? (
+        {hasAny ? (
           <>
-            <SpendChart key={`${range.from}-${range.to}`} buckets={buckets} currency={currency} />
-            <CategoryList groups={groups} currency={currency} onDelete={handleDelete} />
+            {hasExpenses && (
+              <SpendChart key={`${range.from}-${range.to}`} buckets={buckets} currency={currency} />
+            )}
+            <CategoryList
+              groups={groups}
+              income={income}
+              currency={currency}
+              onDelete={handleDelete}
+            />
           </>
         ) : filtering ? (
           <EmptyState message="No matching transactions" icon="search" />

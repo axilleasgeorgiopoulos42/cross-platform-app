@@ -1,4 +1,4 @@
-import { filterByMonth, summarize, categoryBreakdown, groupByCategory } from '../../src/domains/expenses/summary';
+import { filterByMonth, summarize, categoryBreakdown, groupByCategory, incomeEntries } from '../../src/domains/expenses/summary';
 import type { Category, Transaction } from '../../src/domains/expenses/types';
 
 let n = 0;
@@ -143,5 +143,18 @@ describe('groupByCategory', () => {
     const after = groupByCategory([bill]);
     expect(after.map((g) => g.category)).toEqual(['bills']);
     expect(after[0].share).toBe(1);
+  });
+});
+
+describe('incomeEntries', () => {
+  it('returns only income, newest first, and the total', () => {
+    const a = tx({ type: 'income', amount: 100, date: new Date(2026, 10, 2).getTime() });
+    const b = tx({ type: 'income', amount: 50, date: new Date(2026, 10, 9).getTime() });
+    const e = tx({ type: 'expense', amount: 7 });
+    expect(incomeEntries([a, e, b])).toEqual({ entries: [b, a], total: 150 });
+  });
+  it('is empty when there is no income', () => {
+    expect(incomeEntries([tx({})])).toEqual({ entries: [], total: 0 });
+    expect(incomeEntries([])).toEqual({ entries: [], total: 0 });
   });
 });

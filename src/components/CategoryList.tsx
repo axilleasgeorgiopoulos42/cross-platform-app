@@ -5,20 +5,22 @@ import { Typography } from './Typography';
 import { TransactionItem } from './TransactionItem';
 import { categoryRowLabel } from './categoryRowLabel';
 import { useTheme } from '../hooks/useTheme';
-import { CATEGORIES } from '../constants/categories';
+import { CATEGORIES, INCOME_ICON } from '../constants/categories';
 import type { Currency } from '../constants/currencies';
-import type { Category } from '../domains/expenses/types';
+import type { Category, Transaction } from '../domains/expenses/types';
 import type { CategoryGroup } from '../domains/expenses/summary';
 import { formatMoney } from '../lib/money';
 import { radius, spacing } from '../constants/theme';
 
 interface CategoryListProps {
   groups: CategoryGroup[];
+  /** Income entries in the range (newest first); renders an expandable Income row when non-empty. */
+  income?: { entries: Transaction[]; total: number };
   currency: Currency;
   onDelete: (id: string) => void;
 }
 
-export function CategoryList({ groups, currency, onDelete }: CategoryListProps) {
+export function CategoryList({ groups, income, currency, onDelete }: CategoryListProps) {
   const { colors } = useTheme();
   // Keyed by category (not index); pruned below when a group disappears.
   const [expanded, setExpanded] = useState<Set<Category>>(() => new Set());
@@ -29,7 +31,12 @@ export function CategoryList({ groups, currency, onDelete }: CategoryListProps) 
     setExpanded(new Set([...expanded].filter((c) => !stale.includes(c))));
   }
 
-  if (groups.length === 0) return null;
+  const incomeCount = income?.entries.length ?? 0;
+  const [incomeOpen, setIncomeOpen] = useState(false);
+  // Reset the Income section when its entries vanish, so it reappears collapsed.
+  if (incomeCount === 0 && incomeOpen) setIncomeOpen(false);
+
+  if (groups.length === 0 && incomeCount === 0) return null;
 
   const toggle = (category: Category) =>
     setExpanded((prev) => {
@@ -96,6 +103,38 @@ export function CategoryList({ groups, currency, onDelete }: CategoryListProps) 
           </View>
         );
       })}
+      {income && incomeCount > 0 && (
+        <View>
+          <Pressable
+            onPress={() => setIncomeOpen((v) => !v)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: incomeOpen }}
+            accessibilityLabel={categoryRowLabel('Income', income.total, incomeCount, currency)}
+            style={styles.row}
+          >
+            <Feather
+              name={INCOME_ICON as keyof typeof Feather.glyphMap}
+              size={18}
+              color={colors.textSecondary}
+            />
+            <View style={styles.middle}>
+              <Typography variant="caption">Income</Typography>
+            </View>
+            <Typography variant="caption" style={styles.amount}>
+              {formatMoney(income.total, currency)}
+            </Typography>
+            <Feather
+              name={incomeOpen ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color={colors.textSecondary}
+            />
+          </Pressable>
+          {incomeOpen &&
+            income.entries.map((tx) => (
+              <TransactionItem key={tx.id} transaction={tx} onDelete={onDelete} />
+            ))}
+        </View>
+      )}
     </View>
   );
 }

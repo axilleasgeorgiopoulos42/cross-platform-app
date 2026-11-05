@@ -13,6 +13,12 @@ export interface CategoryGroup {
   entries: Transaction[];
 }
 
+/** Income entries (newest `date` first) with their total. */
+export function incomeEntries(txs: Transaction[]): { entries: Transaction[]; total: number } {
+  const entries = txs.filter((t) => t.type === 'income').sort((a, b) => b.date - a.date);
+  return { entries, total: entries.reduce((s, t) => s + t.amount, 0) };
+}
+
 /** Transactions within the local-time calendar month. `month` is 0-11. */
 export function filterByMonth(txs: Transaction[], year: number, month: number): Transaction[] {
   const start = new Date(year, month, 1).getTime();
