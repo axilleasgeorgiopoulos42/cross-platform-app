@@ -46,6 +46,39 @@ export const expenseService = {
     return { id, ...data, createdAt };
   },
 
+  async getById(db: SQLiteDatabase, id: string): Promise<Transaction | null> {
+    const row = await db.getFirstAsync<TransactionRow>(
+      'SELECT * FROM transactions WHERE id = ?',
+      [id],
+    );
+    return row ? toTransaction(row) : null;
+  },
+
+  async update(
+    db: SQLiteDatabase,
+    id: string,
+    patch: Partial<Pick<Transaction, 'type' | 'amount' | 'category' | 'note' | 'date'>>,
+  ): Promise<Transaction> {
+    const existing = await expenseService.getById(db, id);
+    if (!existing) throw new Error('Transaction not found');
+
+    const merged: Transaction = {
+      ...existing,
+      type: patch.type !== undefined ? patch.type : existing.type,
+      amount: patch.amount !== undefined ? patch.amount : existing.amount,
+      category: patch.category !== undefined ? patch.category : existing.category,
+      note: patch.note !== undefined ? patch.note : existing.note,
+      date: patch.date !== undefined ? patch.date : existing.date,
+    };
+    if (!(merged.amount > 0)) throw new Error('Amount must be greater than 0');
+
+    await db.runAsync(
+      'UPDATE transactions SET type = ?, amount = ?, category = ?, note = ?, date = ? WHERE id = ?',
+      [merged.type, merged.amount, merged.category, merged.note, merged.date, id],
+    );
+    return merged;
+  },
+
   async remove(db: SQLiteDatabase, id: string): Promise<void> {
     await db.runAsync('DELETE FROM transactions WHERE id = ?', [id]);
   },

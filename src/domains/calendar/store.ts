@@ -12,7 +12,12 @@ interface CalendarStore {
 
   loadMonth(year: number, month: number): Promise<void>;
   selectDate(date: number | null): void;
-  addEvent(title: string, date: number, time: string | null): Promise<void>;
+  addEvent(title: string, date: number, time: string | null, notes?: string | null): Promise<void>;
+  updateEvent(
+    id: string,
+    patch: { title?: string; date?: number; time?: string | null; notes?: string | null },
+  ): Promise<void>;
+  fetchEvent(id: string): Promise<CalendarEvent | null>;
   deleteEvent(id: string): Promise<void>;
   nextMonth(): void;
   prevMonth(): void;
@@ -42,14 +47,35 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
     set({ selectedDate: date });
   },
 
-  async addEvent(title: string, date: number, time: string | null) {
+  async addEvent(title: string, date: number, time: string | null, notes: string | null = null) {
     try {
       const db = await getDb();
-      await calendarService.create(db, { title, date, time });
+      await calendarService.create(db, { title, date, time, notes });
       const { currentMonth } = get();
       await get().loadMonth(currentMonth.year, currentMonth.month);
     } catch (e) {
       set({ error: (e as Error).message });
+    }
+  },
+
+  async updateEvent(id, patch) {
+    try {
+      const db = await getDb();
+      await calendarService.update(db, id, patch);
+      const { currentMonth } = get();
+      await get().loadMonth(currentMonth.year, currentMonth.month);
+    } catch (e) {
+      set({ error: (e as Error).message });
+    }
+  },
+
+  async fetchEvent(id: string) {
+    try {
+      const db = await getDb();
+      return await calendarService.getById(db, id);
+    } catch (e) {
+      set({ error: (e as Error).message });
+      return null;
     }
   },
 

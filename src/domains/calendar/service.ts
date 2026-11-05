@@ -52,18 +52,45 @@ export const calendarService = {
 
   async create(
     db: SQLiteDatabase,
-    data: { title: string; date: number; time: string | null },
+    data: { title: string; date: number; time: string | null; notes?: string | null },
   ): Promise<CalendarEvent> {
     const title = data.title.trim();
     if (!title) throw new Error('Event title cannot be empty');
 
     const id = crypto.randomUUID();
     const createdAt = Date.now();
+    const notes = data.notes ?? null;
     await db.runAsync(
-      'INSERT INTO events (id, title, date, time, created_at) VALUES (?, ?, ?, ?, ?)',
-      [id, title, data.date, data.time, createdAt],
+      'INSERT INTO events (id, title, date, time, notes, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, title, data.date, data.time, notes, createdAt],
     );
-    return { id, title, date: data.date, time: data.time, notes: null, createdAt };
+    return { id, title, date: data.date, time: data.time, notes, createdAt };
+  },
+
+  async getById(db: SQLiteDatabase, id: string): Promise<CalendarEvent | null> {
+    const row = await db.getFirstAsync<EventRow>('SELECT * FROM events WHERE id = ?', [id]);
+    return row ? toEvent(row) : null;
+  },
+
+  async update(
+    db: SQLiteDatabase,
+    id: string,
+    patch: { title?: string; date?: number; time?: string | null; notes?: string | null },
+  ): Promise<CalendarEvent> {
+    const existing = await calendarService.getById(db, id);
+    if (!existing) throw new Error('Event not found');
+
+    const title = patch.title !== undefined ? patch.title.trim() : existing.title;
+    if (!title) throw new Error('Event title cannot be empty');
+    const date = patch.date !== undefined ? patch.date : existing.date;
+    const time = patch.time !== undefined ? patch.time : existing.time;
+    const notes = patch.notes !== undefined ? patch.notes : existing.notes;
+
+    await db.runAsync(
+      'UPDATE events SET title = ?, date = ?, time = ?, notes = ? WHERE id = ?',
+      [title, date, time, notes, id],
+    );
+    return { ...existing, title, date, time, notes };
   },
 
   async remove(db: SQLiteDatabase, id: string): Promise<void> {
