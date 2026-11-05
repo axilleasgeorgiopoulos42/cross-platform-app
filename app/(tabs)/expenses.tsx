@@ -3,13 +3,13 @@ import { Screen } from '../../src/components/Screen';
 import { Typography } from '../../src/components/Typography';
 import { spacing } from '../../src/constants/theme';
 
-export default function ExploreScreen() {
+export default function ExpensesScreen() {
   return (
     <Screen>
       <View style={styles.container}>
-        <Typography variant="h2">Explore</Typography>
+        <Typography variant="h2">Expenses</Typography>
         <Typography variant="body" secondary>
-          Add your content here.
+          Coming soon.
         </Typography>
       </View>
     </Screen>

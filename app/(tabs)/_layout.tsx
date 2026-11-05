@@ -1,12 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
-
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  return (
-    <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{label}</Text>
-  );
-}
 
 export default function TabLayout() {
   const { colors } = useTheme();
@@ -28,22 +22,19 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon label="🏠" focused={focused} />,
+          title: 'Calendar',
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="calendar" size={size} color={color as string} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="expenses"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ focused }) => <TabIcon label="🔍" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ focused }) => <TabIcon label="⚙️" focused={focused} />,
+          title: 'Expenses',
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="credit-card" size={size} color={color as string} />
+          ),
         }}
       />
     </Tabs>
