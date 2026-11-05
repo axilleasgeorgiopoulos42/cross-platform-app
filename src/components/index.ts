@@ -1,10 +1,12 @@
 export { Button } from './Button';
 export { CalendarGrid } from './CalendarGrid';
 export { Card } from './Card';
+export { CategoryPicker } from './CategoryPicker';
 export { DayCell } from './DayCell';
 export { EmptyState } from './EmptyState';
 export { EventItem } from './EventItem';
 export { FAB } from './FAB';
 export { Modal } from './Modal';
 export { Screen } from './Screen';
+export { TransactionItem } from './TransactionItem';
 export { Typography } from './Typography';
