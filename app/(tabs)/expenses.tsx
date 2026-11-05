@@ -1,21 +1,30 @@
-import { useCallback, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { Screen } from '../../src/components/Screen';
 import { Typography } from '../../src/components/Typography';
 import { Card } from '../../src/components/Card';
-import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FAB } from '../../src/components/FAB';
 import { Modal } from '../../src/components/Modal';
+import { MonthSwitcher } from '../../src/components/MonthSwitcher';
+import { CategoryBreakdown } from '../../src/components/CategoryBreakdown';
 import { TransactionItem } from '../../src/components/TransactionItem';
-import { CategoryPicker } from '../../src/components/CategoryPicker';
+import {
+  TransactionForm,
+  type TransactionFormValues,
+} from '../../src/components/TransactionForm';
 import { useExpenseStore } from '../../src/domains/expenses/store';
-import type { Category, Transaction } from '../../src/domains/expenses/types';
+import type { Transaction } from '../../src/domains/expenses/types';
+import { useSettingsStore } from '../../src/domains/settings/store';
+import { categoryBreakdown, filterByMonth, summarize } from '../../src/domains/expenses/summary';
+import { shiftMonth } from '../../src/lib/dates';
+import { formatMoney } from '../../src/lib/money';
 import { useTheme } from '../../src/hooks/useTheme';
-import { spacing, radius } from '../../src/constants/theme';
+import { spacing } from '../../src/constants/theme';
 
 export default function ExpensesScreen() {
   const { colors } = useTheme();
+  const currency = useSettingsStore((s) => s.settings.currency);
   const {
     transactions,
     balance,
@@ -25,38 +34,51 @@ export default function ExpensesScreen() {
   } = useExpenseStore();
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [type, setType] = useState<'income' | 'expense'>('expense');
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState<Category>('other');
-  const [note, setNote] = useState('');
+  const [view, setView] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
+
+  const monthTxs = useMemo(
+    () => filterByMonth(transactions, view.year, view.month),
+    [transactions, view.year, view.month],
+  );
+  const monthSummary = useMemo(() => summarize(monthTxs), [monthTxs]);
+  const breakdown = useMemo(() => categoryBreakdown(monthTxs), [monthTxs]);
+
+  const goPrev = useCallback(
+    () => setView((v) => shiftMonth(v.year, v.month, -1)),
+    [],
+  );
+  const goNext = useCallback(
+    () => setView((v) => shiftMonth(v.year, v.month, 1)),
+    [],
+  );
 
   useEffect(() => {
     loadTransactions();
-  }, []);
+  }, [loadTransactions]);
 
-  const handleSave = useCallback(async () => {
-    const parsed = parseFloat(amount);
-    if (!parsed || parsed <= 0) return;
-    await addTransaction({
-      type,
-      amount: parsed,
-      category: type === 'income' ? 'other' : category,
-      note: note.trim() || null,
-      date: Date.now(),
-    });
-    setAmount('');
-    setNote('');
-    setCategory('other');
-    setType('expense');
-    setModalVisible(false);
-  }, [type, amount, category, note, addTransaction]);
+  const handleSave = useCallback(
+    async (values: TransactionFormValues) => {
+      useExpenseStore.setState({ error: null });
+      await addTransaction({ ...values, date: Date.now() });
+      if (useExpenseStore.getState().error === null) {
+        // The new transaction is dated now; show the current month so it is visible.
+        const now = new Date();
+        setView({ year: now.getFullYear(), month: now.getMonth() });
+      }
+      setModalVisible(false);
+    },
+    [addTransaction],
+  );
 
   const handleDelete = useCallback(
     (id: string) => deleteTransaction(id),
     [deleteTransaction],
   );
 
-  const balanceColor = balance.balance < 0 ? colors.destructive : colors.text;
+  const balanceColor = monthSummary.balance < 0 ? colors.destructive : colors.text;
 
   const renderItem = useCallback(
     ({ item }: { item: Transaction }) => (
@@ -67,34 +89,53 @@ export default function ExpensesScreen() {
 
   return (
     <Screen scroll={false}>
-      <Card style={styles.balanceCard}>
-        <View style={styles.balanceRow}>
-          <Typography variant="caption" secondary>Income</Typography>
-          <Typography variant="body" style={{ color: colors.success }}>
-            +{balance.totalIncome.toFixed(2)}
-          </Typography>
-        </View>
-        <View style={styles.balanceRow}>
-          <Typography variant="caption" secondary>Expenses</Typography>
-          <Typography variant="body" style={{ color: colors.destructive }}>
-            −{balance.totalExpenses.toFixed(2)}
-          </Typography>
-        </View>
-        <View style={[styles.balanceRow, styles.totalRow]}>
-          <Typography variant="caption">Balance</Typography>
-          <Typography variant="h1" style={{ color: balanceColor }}>
-            {balance.balance.toFixed(2)}
-          </Typography>
-        </View>
-      </Card>
+      <View style={styles.switcherRow}>
+        <MonthSwitcher
+          year={view.year}
+          month={view.month}
+          onPrev={goPrev}
+          onNext={goNext}
+        />
+      </View>
 
       <FlatList
-        data={transactions}
+        data={monthTxs}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <View>
+            <Card style={styles.balanceCard}>
+              <View style={styles.balanceRow}>
+                <Typography variant="caption" secondary>Income</Typography>
+                <Typography variant="body" style={{ color: colors.success }}>
+                  +{formatMoney(Math.abs(monthSummary.totalIncome), currency)}
+                </Typography>
+              </View>
+              <View style={styles.balanceRow}>
+                <Typography variant="caption" secondary>Expenses</Typography>
+                <Typography variant="body" style={{ color: colors.destructive }}>
+                  −{formatMoney(Math.abs(monthSummary.totalExpenses), currency)}
+                </Typography>
+              </View>
+              <View style={[styles.balanceRow, styles.totalRow]}>
+                <Typography variant="caption">Net</Typography>
+                <Typography variant="h1" style={{ color: balanceColor }}>
+                  {formatMoney(monthSummary.balance, currency)}
+                </Typography>
+              </View>
+              <View style={styles.balanceRow}>
+                <Typography variant="caption" secondary>All time</Typography>
+                <Typography variant="caption" secondary>
+                  {formatMoney(balance.balance, currency)}
+                </Typography>
+              </View>
+            </Card>
+            <CategoryBreakdown items={breakdown} currency={currency} />
+          </View>
+        }
         ListEmptyComponent={
-          <EmptyState message="No transactions yet" icon="credit-card" />
+          <EmptyState message="No transactions this month" icon="credit-card" />
         }
       />
 
@@ -105,72 +146,18 @@ export default function ExpensesScreen() {
         onClose={() => setModalVisible(false)}
         title="Add Transaction"
       >
-        <View style={styles.typeToggle}>
-          <Button
-            title="Income"
-            variant={type === 'income' ? 'primary' : 'secondary'}
-            onPress={() => setType('income')}
-            style={styles.toggleBtn}
-          />
-          <Button
-            title="Expense"
-            variant={type === 'expense' ? 'primary' : 'secondary'}
-            onPress={() => setType('expense')}
-            style={styles.toggleBtn}
-          />
-        </View>
-
-        <TextInput
-          placeholder="0.00"
-          placeholderTextColor={colors.textSecondary}
-          keyboardType="decimal-pad"
-          value={amount}
-          onChangeText={setAmount}
-          style={[
-            styles.amountInput,
-            {
-              color: colors.text,
-              borderColor: colors.border,
-              backgroundColor: colors.surface,
-            },
-          ]}
-        />
-
-        {type === 'expense' && (
-          <CategoryPicker
-            selected={category}
-            onSelect={setCategory}
-            type={type}
-          />
-        )}
-
-        <TextInput
-          placeholder="Add a note..."
-          placeholderTextColor={colors.textSecondary}
-          value={note}
-          onChangeText={setNote}
-          style={[
-            styles.input,
-            {
-              color: colors.text,
-              borderColor: colors.border,
-              backgroundColor: colors.surface,
-            },
-          ]}
-        />
-
-        <Button
-          title="Save"
-          onPress={handleSave}
-          disabled={!amount.trim() || parseFloat(amount) <= 0 || isNaN(parseFloat(amount))}
-          style={styles.saveBtn}
-        />
+        <TransactionForm submitLabel="Save" onSubmit={handleSave} />
       </Modal>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  switcherRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
   balanceCard: {
     marginBottom: spacing.md,
   },
@@ -189,33 +176,5 @@ const styles = StyleSheet.create({
   list: {
     flexGrow: 1,
     paddingBottom: 80,
-  },
-  typeToggle: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  toggleBtn: {
-    flex: 1,
-  },
-  amountInput: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    fontSize: 24,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    fontSize: 16,
-    marginBottom: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  saveBtn: {
-    marginTop: spacing.sm,
   },
 });

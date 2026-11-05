@@ -1,5 +1,9 @@
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
+## Project history — read first, update after every prompt
+
+Read `PROJECT_LOG.md` before doing anything: it records what was asked and done in earlier sessions, the rulings made, the open backlog and the next steps. After every user prompt, append a short entry to it (see "How to maintain" at the bottom of that file). Plans and specs from earlier work are in `docs/history/`. This app has its own git repo; never commit its files to the parent repo.
+
 ## Expo has changed — do not trust your training data
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
@@ -25,7 +29,7 @@ Run lint and typecheck before declaring any task done.
 
 ## Navigation & Routing
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
+- Use **Expo Router** for all navigation. Routes live in `app/` in this repo (not `src/app/`) — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
 - Docs: https://docs.expo.dev/router/introduction.md
 

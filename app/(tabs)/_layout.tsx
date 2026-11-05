@@ -1,4 +1,5 @@
-import { Tabs } from 'expo-router';
+import { Pressable, StyleSheet } from 'react-native';
+import { Tabs, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
 
@@ -11,6 +12,16 @@ export default function TabLayout() {
         headerStyle: { backgroundColor: colors.background },
         headerTintColor: colors.text,
         headerShadowVisible: false,
+        headerRight: () => (
+          <Pressable
+            onPress={() => router.push('/settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+            style={styles.gear}
+          >
+            <Feather name="settings" size={22} color={colors.text} />
+          </Pressable>
+        ),
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
@@ -21,6 +32,15 @@ export default function TabLayout() {
     >
       <Tabs.Screen
         name="index"
+        options={{
+          title: 'Today',
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="sun" size={size} color={color as string} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
         options={{
           title: 'Calendar',
           tabBarIcon: ({ color, size }) => (
@@ -40,3 +60,12 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  gear: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

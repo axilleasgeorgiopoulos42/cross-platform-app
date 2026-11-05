@@ -1,0 +1,50 @@
+# Development
+
+## Setup
+
+```bash
+npm install
+npx expo start --web
+```
+
+Scripts: `npm test` (jest), `npm run typecheck` (`tsc --noEmit`), `npm run lint` (`expo lint`), `npm run web`. Production build: `npx expo export --platform web`.
+
+## Test harness
+
+Jest uses `jest-expo` with `testEnvironment: node`, matches `tests/**/*.test.ts`, and loads `tests/setup.ts`. `createTestDb()` in `tests/helpers/testDb.ts` returns an `SQLiteDatabase`-shaped object backed by sql.js (execAsync, runAsync, getAllAsync, getFirstAsync, withTransactionAsync).
+
+Writing a service test:
+
+```ts
+import { createTestDb } from '../helpers/testDb';
+import { runMigrations } from '../../src/db/migrations';
+import { settingsService } from '../../src/domains/settings/service';
+
+it('get returns defaults on empty db', async () => {
+  const db = await createTestDb();
+  await runMigrations(db);
+  expect(await settingsService.get(db)).toEqual({ currency: 'EUR', theme: 'system' });
+});
+```
+
+## Adding a migration step
+
+In `src/db/migrations.ts`, bump `SCHEMA_VERSION`, add an `if (version < N)` block after the existing ones, make it idempotent (`IF NOT EXISTS`, check `PRAGMA table_info` before `ALTER TABLE`), set `PRAGMA user_version`, and extend `tests/db/migrations.test.ts` (including upgrading from the previous version with data). If the shape of exported data changes, update `src/domains/backup` and the backup `version`.
+
+## Adding a screen or route
+
+Create a file under `app/` (Expo Router; `[id].tsx` for dynamic routes) and register it in `app/_layout.tsx` if it needs stack options. Put logic in a domain service and expose it through a store; the screen only uses stores and components.
+
+## Platform notes
+
+- `Alert.alert` does not work on web. Use `confirmAction(title, message, label)` from `src/lib/confirm`.
+- File download and pick exist only on web (`src/lib/files.web.ts`). Platform-specific code follows the `.web.ts` pair convention.
+- Add dependencies with `npx expo install <pkg>`.
+
+## Commit and deploy
+
+Pushing `main` auto-deploys to Vercel (https://cross-platform-app-navy.vercel.app). Other branches get preview deployments. Before pushing run jest, `tsc --noEmit`, `expo lint` and `expo export --platform web`.
+
+## Known limitations
+
+Backup UI is web-only. No recurring events, budgets, search, reminders or sync. Data is local to one browser or device.

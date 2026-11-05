@@ -1,10 +1,10 @@
 import type { Category } from '../domains/expenses/types';
 
-export const CATEGORIES: ReadonlyArray<{
+export const CATEGORIES: readonly {
   key: Category;
   label: string;
   icon: string;
-}> = [
+}[] = [
   { key: 'food', label: 'Food', icon: 'coffee' },
   { key: 'transport', label: 'Transport', icon: 'navigation' },
   { key: 'bills', label: 'Bills', icon: 'file-text' },

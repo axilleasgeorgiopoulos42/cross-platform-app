@@ -11,6 +11,11 @@ interface ExpenseStore {
 
   loadTransactions(): Promise<void>;
   addTransaction(data: Omit<Transaction, 'id' | 'createdAt'>): Promise<void>;
+  updateTransaction(
+    id: string,
+    patch: Partial<Pick<Transaction, 'type' | 'amount' | 'category' | 'note' | 'date'>>,
+  ): Promise<void>;
+  fetchTransaction(id: string): Promise<Transaction | null>;
   deleteTransaction(id: string): Promise<void>;
 }
 
@@ -41,6 +46,26 @@ export const useExpenseStore = create<ExpenseStore>((set, get) => ({
       await get().loadTransactions();
     } catch (e) {
       set({ error: (e as Error).message });
+    }
+  },
+
+  async updateTransaction(id, patch) {
+    try {
+      const db = await getDb();
+      await expenseService.update(db, id, patch);
+      await get().loadTransactions();
+    } catch (e) {
+      set({ error: (e as Error).message });
+    }
+  },
+
+  async fetchTransaction(id: string) {
+    try {
+      const db = await getDb();
+      return await expenseService.getById(db, id);
+    } catch (e) {
+      set({ error: (e as Error).message });
+      return null;
     }
   },
 

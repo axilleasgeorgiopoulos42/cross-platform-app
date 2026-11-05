@@ -3,5 +3,6 @@ export interface CalendarEvent {
   title: string;
   date: number;
   time: string | null;
+  notes: string | null;
   createdAt: number;
 }

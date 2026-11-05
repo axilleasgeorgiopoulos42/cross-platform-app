@@ -1,12 +1,18 @@
 export { Button } from './Button';
 export { CalendarGrid } from './CalendarGrid';
 export { Card } from './Card';
+export { CategoryBreakdown } from './CategoryBreakdown';
 export { CategoryPicker } from './CategoryPicker';
 export { DayCell } from './DayCell';
 export { EmptyState } from './EmptyState';
+export { EventForm } from './EventForm';
+export type { EventFormValues } from './EventForm';
 export { EventItem } from './EventItem';
 export { FAB } from './FAB';
 export { Modal } from './Modal';
+export { MonthSwitcher } from './MonthSwitcher';
 export { Screen } from './Screen';
+export { TransactionForm } from './TransactionForm';
+export type { TransactionFormValues } from './TransactionForm';
 export { TransactionItem } from './TransactionItem';
 export { Typography } from './Typography';
