@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 import { fontSize, radius, spacing } from '../constants/theme';
+import { glow, themeTransition } from '../lib/glass';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 
@@ -49,6 +50,8 @@ export function Button({
       disabled={disabled || loading}
       style={({ pressed }) => [
         styles.btn,
+        themeTransition(),
+        variant === 'primary' && !disabled && glow(colors.glow),
         { backgroundColor: bg[variant] },
         variant === 'secondary' && { borderWidth: 1, borderColor: colors.border },
         (disabled || loading) && styles.disabled,

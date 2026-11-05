@@ -7,7 +7,8 @@ import {
 } from 'react-native';
 import { Typography } from './Typography';
 import { useTheme } from '../hooks/useTheme';
-import { radius, spacing } from '../constants/theme';
+import { blur, radius, spacing } from '../constants/theme';
+import { glass } from '../lib/glass';
 
 interface ModalProps {
   visible: boolean;
@@ -30,8 +31,9 @@ export function Modal({ visible, onClose, title, children }: ModalProps) {
         <Pressable
           style={[
             styles.content,
+            glass(blur.tabBar),
             {
-              backgroundColor: colors.background,
+              backgroundColor: colors.tabBar,
               borderTopColor: colors.border,
             },
           ]}

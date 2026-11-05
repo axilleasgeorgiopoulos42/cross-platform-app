@@ -34,7 +34,7 @@ export function DayCell({
         variant="body"
         style={[
           styles.dayText,
-          isToday && { fontWeight: '700' },
+          isToday && { fontWeight: '600' },
           !isCurrentMonth && { opacity: 0.3 },
           isSelected && { color: colors.primary },
         ]}
