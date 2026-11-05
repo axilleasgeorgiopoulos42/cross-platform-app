@@ -61,7 +61,13 @@ export default function ExpensesScreen() {
 
   const handleSave = useCallback(
     async (values: TransactionFormValues) => {
+      useExpenseStore.setState({ error: null });
       await addTransaction({ ...values, date: Date.now() });
+      if (useExpenseStore.getState().error === null) {
+        // The new transaction is dated now; show the current month so it is visible.
+        const now = new Date();
+        setView({ year: now.getFullYear(), month: now.getMonth() });
+      }
       setModalVisible(false);
     },
     [addTransaction],
