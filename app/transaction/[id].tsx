@@ -96,6 +96,7 @@ export default function TransactionDetailScreen() {
           amount: transaction.amount,
           category: transaction.category,
           note: transaction.note,
+          date: transaction.date,
         }}
         submitLabel="Save"
         onSubmit={handleSave}

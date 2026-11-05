@@ -17,8 +17,9 @@ import { useExpenseStore } from '../../src/domains/expenses/store';
 import type { Transaction } from '../../src/domains/expenses/types';
 import { useSettingsStore } from '../../src/domains/settings/store';
 import { categoryBreakdown, filterByMonth, summarize } from '../../src/domains/expenses/summary';
-import { shiftMonth } from '../../src/lib/dates';
+import { monthOf, shiftMonth } from '../../src/lib/dates';
 import { formatMoney } from '../../src/lib/money';
+import { useTodayStart } from '../../src/hooks/useTodayStart';
 import { useTheme } from '../../src/hooks/useTheme';
 import { spacing } from '../../src/constants/theme';
 
@@ -33,6 +34,7 @@ export default function ExpensesScreen() {
     deleteTransaction,
   } = useExpenseStore();
 
+  const dayStart = useTodayStart();
   const [modalVisible, setModalVisible] = useState(false);
   const [view, setView] = useState(() => {
     const now = new Date();
@@ -62,11 +64,10 @@ export default function ExpensesScreen() {
   const handleSave = useCallback(
     async (values: TransactionFormValues) => {
       useExpenseStore.setState({ error: null });
-      await addTransaction({ ...values, date: Date.now() });
+      await addTransaction(values);
       if (useExpenseStore.getState().error === null) {
-        // The new transaction is dated now; show the current month so it is visible.
-        const now = new Date();
-        setView({ year: now.getFullYear(), month: now.getMonth() });
+        // Show the month of the new transaction so it is visible.
+        setView(monthOf(values.date));
       }
       setModalVisible(false);
     },
@@ -146,7 +147,7 @@ export default function ExpensesScreen() {
         onClose={() => setModalVisible(false)}
         title="Add Transaction"
       >
-        <TransactionForm submitLabel="Save" onSubmit={handleSave} />
+        <TransactionForm initial={{ date: dayStart }} submitLabel="Save" onSubmit={handleSave} />
       </Modal>
     </Screen>
   );

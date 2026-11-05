@@ -74,7 +74,7 @@ export default function TodayScreen() {
 
   const handleAddExpense = useCallback(
     async (values: TransactionFormValues) => {
-      await addTransaction({ ...values, date: Date.now() });
+      await addTransaction(values);
       setQuickAdd(null);
     },
     [addTransaction],
@@ -143,7 +143,7 @@ export default function TodayScreen() {
         <EventForm initial={{ date: dayStart }} submitLabel="Save" onSubmit={handleAddEvent} />
       </Modal>
       <Modal visible={quickAdd === 'expense'} onClose={closeModal} title="Add Expense">
-        <TransactionForm submitLabel="Save" onSubmit={handleAddExpense} />
+        <TransactionForm initial={{ date: dayStart }} submitLabel="Save" onSubmit={handleAddExpense} />
       </Modal>
     </Screen>
   );
