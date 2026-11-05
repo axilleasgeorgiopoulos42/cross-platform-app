@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { Button } from './Button';
 import { CategoryPicker } from './CategoryPicker';
 import type { Category } from '../domains/expenses/types';
 import { useTheme } from '../hooks/useTheme';
+import { createSubmitGuard } from '../lib/submitGuard';
 import { spacing, radius } from '../constants/theme';
 
 export interface TransactionFormValues {
@@ -16,11 +17,14 @@ export interface TransactionFormValues {
 interface TransactionFormProps {
   initial?: Partial<TransactionFormValues>;
   submitLabel: string;
+  resetOnSubmit?: boolean;
   onSubmit(values: TransactionFormValues): void | Promise<void>;
 }
 
-export function TransactionForm({ initial, submitLabel, onSubmit }: TransactionFormProps) {
+export function TransactionForm({ initial, submitLabel, onSubmit, resetOnSubmit = true }: TransactionFormProps) {
   const { colors } = useTheme();
+  const guard = useRef(createSubmitGuard()).current;
+  const [submitting, setSubmitting] = useState(false);
   const [type, setType] = useState<'income' | 'expense'>(initial?.type ?? 'expense');
   const [amount, setAmount] = useState(initial?.amount != null ? String(initial.amount) : '');
   const [category, setCategory] = useState<Category>(initial?.category ?? 'other');
@@ -30,17 +34,26 @@ export function TransactionForm({ initial, submitLabel, onSubmit }: TransactionF
   const disabled = !amount.trim() || isNaN(parsed) || parsed <= 0;
 
   const handleSubmit = async () => {
-    if (disabled) return;
-    await onSubmit({
-      type,
-      amount: parsed,
-      category: type === 'income' ? 'other' : category,
-      note: note.trim() || null,
-    });
-    setType(initial?.type ?? 'expense');
-    setAmount(initial?.amount != null ? String(initial.amount) : '');
-    setCategory(initial?.category ?? 'other');
-    setNote(initial?.note ?? '');
+    if (disabled || guard.isRunning()) return;
+    setSubmitting(true);
+    try {
+      await guard.run(async () => {
+        await onSubmit({
+          type,
+          amount: parsed,
+          category: type === 'income' ? 'other' : category,
+          note: note.trim() || null,
+        });
+        if (resetOnSubmit) {
+          setType(initial?.type ?? 'expense');
+          setAmount(initial?.amount != null ? String(initial.amount) : '');
+          setCategory(initial?.category ?? 'other');
+          setNote(initial?.note ?? '');
+        }
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -90,7 +103,8 @@ export function TransactionForm({ initial, submitLabel, onSubmit }: TransactionF
       <Button
         title={submitLabel}
         onPress={handleSubmit}
-        disabled={disabled}
+        disabled={disabled || submitting}
+        loading={submitting}
         style={styles.saveBtn}
       />
     </View>
