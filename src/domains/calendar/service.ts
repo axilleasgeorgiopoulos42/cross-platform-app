@@ -50,6 +50,11 @@ export const calendarService = {
     return rows.map(toEvent);
   },
 
+  async getAll(db: SQLiteDatabase): Promise<CalendarEvent[]> {
+    const rows = await db.getAllAsync<EventRow>('SELECT * FROM events ORDER BY date, time');
+    return rows.map(toEvent);
+  },
+
   async create(
     db: SQLiteDatabase,
     data: { title: string; date: number; time: string | null; notes?: string | null },

@@ -7,6 +7,7 @@ import { startOfDay } from '../../lib/dates';
 interface CalendarStore {
   events: CalendarEvent[];
   todayEvents: CalendarEvent[];
+  allEvents: CalendarEvent[];
   selectedDate: number | null;
   currentMonth: { year: number; month: number };
   loading: boolean;
@@ -14,6 +15,7 @@ interface CalendarStore {
 
   loadMonth(year: number, month: number): Promise<void>;
   loadToday(): Promise<void>;
+  loadAllForSearch(): Promise<void>;
   selectDate(date: number | null): void;
   addEvent(title: string, date: number, time: string | null, notes?: string | null): Promise<void>;
   updateEvent(
@@ -31,6 +33,7 @@ const now = new Date();
 export const useCalendarStore = create<CalendarStore>((set, get) => ({
   events: [],
   todayEvents: [],
+  allEvents: [],
   selectedDate: null,
   currentMonth: { year: now.getFullYear(), month: now.getMonth() },
   loading: false,
@@ -57,6 +60,16 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
     }
   },
 
+  async loadAllForSearch() {
+    try {
+      const db = await getDb();
+      const allEvents = await calendarService.getAll(db);
+      set({ allEvents });
+    } catch (e) {
+      set({ error: (e as Error).message });
+    }
+  },
+
   selectDate(date: number | null) {
     set({ selectedDate: date });
   },
@@ -68,6 +81,7 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
       const { currentMonth } = get();
       await get().loadMonth(currentMonth.year, currentMonth.month);
       await get().loadToday();
+      await get().loadAllForSearch();
     } catch (e) {
       set({ error: (e as Error).message });
     }
@@ -80,6 +94,7 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
       const { currentMonth } = get();
       await get().loadMonth(currentMonth.year, currentMonth.month);
       await get().loadToday();
+      await get().loadAllForSearch();
     } catch (e) {
       set({ error: (e as Error).message });
     }
@@ -102,6 +117,7 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
       const { currentMonth } = get();
       await get().loadMonth(currentMonth.year, currentMonth.month);
       await get().loadToday();
+      await get().loadAllForSearch();
     } catch (e) {
       set({ error: (e as Error).message });
     }
