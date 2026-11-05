@@ -6,6 +6,13 @@ export interface CategoryShare {
   share: number;
 }
 
+export interface CategoryGroup {
+  category: Category;
+  total: number;
+  share: number;
+  entries: Transaction[];
+}
+
 /** Transactions within the local-time calendar month. `month` is 0-11. */
 export function filterByMonth(txs: Transaction[], year: number, month: number): Transaction[] {
   const start = new Date(year, month, 1).getTime();
@@ -36,4 +43,32 @@ export function categoryBreakdown(txs: Transaction[]): CategoryShare[] {
   return [...totals.entries()]
     .map(([category, total]) => ({ category, total, share: total / grand }))
     .sort((a, b) => b.total - a.total);
+}
+
+/**
+ * Expenses grouped by category, sorted by total descending. Each group's entries are
+ * its expenses, newest `date` first. Income is ignored. Returns [] when there are no expenses.
+ */
+export function groupByCategory(txs: Transaction[]): CategoryGroup[] {
+  const groups = new Map<Category, CategoryGroup>();
+  let grand = 0;
+  for (const t of txs) {
+    if (t.type !== 'expense') continue;
+    let group = groups.get(t.category);
+    if (!group) {
+      group = { category: t.category, total: 0, share: 0, entries: [] };
+      groups.set(t.category, group);
+    }
+    group.total += t.amount;
+    group.entries.push(t);
+    grand += t.amount;
+  }
+  if (!(grand > 0)) return [];
+  return [...groups.values()]
+    .sort((a, b) => b.total - a.total)
+    .map((group) => ({
+      ...group,
+      share: group.total / grand,
+      entries: [...group.entries].sort((a, b) => b.date - a.date),
+    }));
 }

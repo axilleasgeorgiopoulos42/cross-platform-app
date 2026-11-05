@@ -1,4 +1,4 @@
-import { filterByMonth, summarize, categoryBreakdown } from '../../src/domains/expenses/summary';
+import { filterByMonth, summarize, categoryBreakdown, groupByCategory } from '../../src/domains/expenses/summary';
 import type { Category, Transaction } from '../../src/domains/expenses/types';
 
 let n = 0;
@@ -89,5 +89,59 @@ describe('categoryBreakdown', () => {
   it('zero-amount expenses do not produce NaN', () => {
     const out = categoryBreakdown([tx({ amount: 0 })]);
     expect(out).toEqual([]);
+  });
+});
+
+describe('groupByCategory', () => {
+  it('[] -> []', () => {
+    expect(groupByCategory([])).toEqual([]);
+  });
+
+  it('income only -> []', () => {
+    expect(groupByCategory([tx({ type: 'income', amount: 500 })])).toEqual([]);
+  });
+
+  it('zero-amount expenses only -> []', () => {
+    expect(groupByCategory([tx({ amount: 0 }), tx({ amount: 0, category: 'bills' })])).toEqual([]);
+  });
+
+  it('orders groups by total descending with totals and shares summing to 1', () => {
+    const out = groupByCategory([
+      tx({ amount: 10, category: 'food' }),
+      tx({ amount: 30, category: 'food' }),
+      tx({ amount: 60, category: 'bills' }),
+    ]);
+    expect(out.map((g) => g.category)).toEqual(['bills', 'food']);
+    expect(out[0].total).toBe(60);
+    expect(out[0].share).toBeCloseTo(0.6, 10);
+    expect(out[1].total).toBe(40);
+    expect(out[1].share).toBeCloseTo(0.4, 10);
+    expect(out.reduce((a, g) => a + g.share, 0)).toBeCloseTo(1, 10);
+  });
+
+  it('entries hold only that category, newest date first, and match entries.length', () => {
+    const food1 = tx({ category: 'food', date: new Date(2026, 10, 1).getTime() });
+    const food2 = tx({ category: 'food', date: new Date(2026, 10, 3).getTime() });
+    const food3 = tx({ category: 'food', date: new Date(2026, 10, 2).getTime() });
+    const bill = tx({ category: 'bills', amount: 60, date: new Date(2026, 10, 2).getTime() });
+    const income = tx({ type: 'income', category: 'food', amount: 999 });
+    const out = groupByCategory([food1, bill, food2, income, food3]);
+    const food = out.find((g) => g.category === 'food');
+    expect(food).toBeDefined();
+    expect(food!.entries.map((e) => e.id)).toEqual([food2.id, food3.id, food1.id]);
+    expect(food!.entries.every((e) => e.category === 'food' && e.type === 'expense')).toBe(true);
+    expect(food!.entries.length).toBe(3);
+    const billsGroup = out.find((g) => g.category === 'bills');
+    expect(billsGroup!.entries).toEqual([bill]);
+    expect(billsGroup!.entries.length).toBe(1);
+  });
+
+  it('removing the only entry of a category drops that group', () => {
+    const food = tx({ category: 'food', amount: 20 });
+    const bill = tx({ category: 'bills', amount: 80 });
+    expect(groupByCategory([food, bill]).map((g) => g.category)).toEqual(['bills', 'food']);
+    const after = groupByCategory([bill]);
+    expect(after.map((g) => g.category)).toEqual(['bills']);
+    expect(after[0].share).toBe(1);
   });
 });
