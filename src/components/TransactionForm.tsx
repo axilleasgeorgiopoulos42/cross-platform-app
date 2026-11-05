@@ -2,9 +2,11 @@ import { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { Button } from './Button';
 import { CategoryPicker } from './CategoryPicker';
+import { DateField } from './DateField';
 import type { Category } from '../domains/expenses/types';
 import { useTheme } from '../hooks/useTheme';
 import { createSubmitGuard } from '../lib/submitGuard';
+import { startOfDay } from '../lib/dates';
 import { spacing, radius } from '../constants/theme';
 
 export interface TransactionFormValues {
@@ -12,6 +14,7 @@ export interface TransactionFormValues {
   amount: number;
   category: Category;
   note: string | null;
+  date: number;
 }
 
 interface TransactionFormProps {
@@ -29,12 +32,14 @@ export function TransactionForm({ initial, submitLabel, onSubmit, resetOnSubmit 
   const [amount, setAmount] = useState(initial?.amount != null ? String(initial.amount) : '');
   const [category, setCategory] = useState<Category>(initial?.category ?? 'other');
   const [note, setNote] = useState(initial?.note ?? '');
+  const [date, setDate] = useState<number | null>(() => initial?.date ?? startOfDay(Date.now()));
+  const [dateTouched, setDateTouched] = useState(false);
 
   const parsed = parseFloat(amount);
-  const disabled = !amount.trim() || isNaN(parsed) || parsed <= 0;
+  const disabled = !amount.trim() || isNaN(parsed) || parsed <= 0 || date == null;
 
   const handleSubmit = async () => {
-    if (disabled || guard.isRunning()) return;
+    if (disabled || date == null || guard.isRunning()) return;
     setSubmitting(true);
     try {
       await guard.run(async () => {
@@ -43,12 +48,15 @@ export function TransactionForm({ initial, submitLabel, onSubmit, resetOnSubmit 
           amount: parsed,
           category: type === 'income' ? 'other' : category,
           note: note.trim() || null,
+          date,
         });
         if (resetOnSubmit) {
           setType(initial?.type ?? 'expense');
           setAmount(initial?.amount != null ? String(initial.amount) : '');
           setCategory(initial?.category ?? 'other');
           setNote(initial?.note ?? '');
+          setDate(initial?.date ?? startOfDay(Date.now()));
+          setDateTouched(false);
         }
       });
     } finally {
@@ -83,6 +91,16 @@ export function TransactionForm({ initial, submitLabel, onSubmit, resetOnSubmit 
           styles.amountInput,
           { color: colors.text, borderColor: colors.border, backgroundColor: colors.surface },
         ]}
+      />
+
+      <DateField
+        label="Date"
+        value={date}
+        onChange={(ts) => {
+          setDate(ts);
+          setDateTouched(true);
+        }}
+        error={dateTouched && date == null ? 'Choose a date' : null}
       />
 
       {type === 'expense' && (

@@ -1,4 +1,12 @@
-import { startOfDay, startOfNextDay, isSameLocalDay } from '../../src/lib/dates';
+import {
+  startOfDay,
+  startOfNextDay,
+  isSameLocalDay,
+  toDateInputValue,
+  fromDateInputValue,
+  endOfDay,
+  monthOf,
+} from '../../src/lib/dates';
 
 // Last Sunday of March and October: a local day may be 23h or 25h in DST zones.
 function lastSunday(year: number, month: number): number {
@@ -52,5 +60,34 @@ describe('shiftMonth', () => {
   });
   it('moves within a year', () => {
     expect(shiftMonth(2026, 4, 1)).toEqual({ year: 2026, month: 5 });
+  });
+});
+
+describe('date input helpers', () => {
+  it('formats a local timestamp as zero-padded YYYY-MM-DD', () => {
+    expect(toDateInputValue(new Date(2026, 0, 5, 23, 59).getTime())).toBe('2026-01-05');
+  });
+
+  it('parses a valid value to local start of day', () => {
+    expect(fromDateInputValue('2026-03-08')).toBe(new Date(2026, 2, 8).getTime());
+    expect(fromDateInputValue('2024-02-29')).toBe(new Date(2024, 1, 29).getTime());
+  });
+
+  it('returns null for empty, malformed or non-existent dates', () => {
+    for (const bad of ['2025-02-29', '2026-02-31', '2026-13-01', '2026-1-5', '', 'abc']) {
+      expect(fromDateInputValue(bad)).toBeNull();
+    }
+  });
+
+  it('round-trips and ends the day correctly across DST changes', () => {
+    for (const month of [2, 9]) {
+      const start = new Date(2026, month, lastSunday(2026, month)).getTime();
+      expect(fromDateInputValue(toDateInputValue(start))).toBe(start);
+      expect(endOfDay(start) + 1).toBe(startOfNextDay(start));
+    }
+  });
+
+  it('monthOf returns the local year and month', () => {
+    expect(monthOf(new Date(2026, 11, 31, 23, 59).getTime())).toEqual({ year: 2026, month: 11 });
   });
 });

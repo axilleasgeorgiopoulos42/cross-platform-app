@@ -91,7 +91,7 @@ export default function EventDetailScreen() {
     >
       <EventForm
         key={event.id}
-        initial={{ title: event.title, time: event.time, notes: event.notes }}
+        initial={{ title: event.title, date: event.date, time: event.time, notes: event.notes }}
         submitLabel="Save"
         onSubmit={handleSave}
         resetOnSubmit={false}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { Screen } from '../../src/components/Screen';
 import { Typography } from '../../src/components/Typography';
 import { Card } from '../../src/components/Card';
@@ -7,6 +8,9 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { FAB } from '../../src/components/FAB';
 import { Modal } from '../../src/components/Modal';
 import { MonthSwitcher } from '../../src/components/MonthSwitcher';
+import { SearchBar } from '../../src/components/SearchBar';
+import { CategoryFilter } from '../../src/components/CategoryFilter';
+import { DateField } from '../../src/components/DateField';
 import { CategoryBreakdown } from '../../src/components/CategoryBreakdown';
 import { TransactionItem } from '../../src/components/TransactionItem';
 import {
@@ -15,10 +19,17 @@ import {
 } from '../../src/components/TransactionForm';
 import { useExpenseStore } from '../../src/domains/expenses/store';
 import type { Transaction } from '../../src/domains/expenses/types';
+import {
+  EMPTY_FILTER,
+  filterTransactions,
+  isFilterActive,
+  type TransactionFilter,
+} from '../../src/domains/expenses/search';
 import { useSettingsStore } from '../../src/domains/settings/store';
 import { categoryBreakdown, filterByMonth, summarize } from '../../src/domains/expenses/summary';
-import { shiftMonth } from '../../src/lib/dates';
+import { monthOf, shiftMonth } from '../../src/lib/dates';
 import { formatMoney } from '../../src/lib/money';
+import { useTodayStart } from '../../src/hooks/useTodayStart';
 import { useTheme } from '../../src/hooks/useTheme';
 import { spacing } from '../../src/constants/theme';
 
@@ -33,7 +44,10 @@ export default function ExpensesScreen() {
     deleteTransaction,
   } = useExpenseStore();
 
+  const dayStart = useTodayStart();
   const [modalVisible, setModalVisible] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filter, setFilter] = useState<TransactionFilter>(EMPTY_FILTER);
   const [view, setView] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -45,6 +59,22 @@ export default function ExpensesScreen() {
   );
   const monthSummary = useMemo(() => summarize(monthTxs), [monthTxs]);
   const breakdown = useMemo(() => categoryBreakdown(monthTxs), [monthTxs]);
+
+  const filtering = isFilterActive(filter);
+  const results = useMemo(
+    () => (filtering ? filterTransactions(transactions, filter) : []),
+    [filtering, transactions, filter],
+  );
+  const resultSummary = useMemo(() => summarize(results), [results]);
+
+  const toggleFilter = useCallback(() => {
+    if (filterOpen) {
+      setFilterOpen(false);
+      setFilter(EMPTY_FILTER);
+    } else {
+      setFilterOpen(true);
+    }
+  }, [filterOpen]);
 
   const goPrev = useCallback(
     () => setView((v) => shiftMonth(v.year, v.month, -1)),
@@ -62,11 +92,10 @@ export default function ExpensesScreen() {
   const handleSave = useCallback(
     async (values: TransactionFormValues) => {
       useExpenseStore.setState({ error: null });
-      await addTransaction({ ...values, date: Date.now() });
+      await addTransaction(values);
       if (useExpenseStore.getState().error === null) {
-        // The new transaction is dated now; show the current month so it is visible.
-        const now = new Date();
-        setView({ year: now.getFullYear(), month: now.getMonth() });
+        // Show the month of the new transaction so it is visible.
+        setView(monthOf(values.date));
       }
       setModalVisible(false);
     },
@@ -90,20 +119,89 @@ export default function ExpensesScreen() {
   return (
     <Screen scroll={false}>
       <View style={styles.switcherRow}>
-        <MonthSwitcher
-          year={view.year}
-          month={view.month}
-          onPrev={goPrev}
-          onNext={goNext}
-        />
+        {filtering ? (
+          <View style={styles.spacer} />
+        ) : (
+          <MonthSwitcher
+            year={view.year}
+            month={view.month}
+            onPrev={goPrev}
+            onNext={goNext}
+          />
+        )}
+        <Pressable
+          onPress={toggleFilter}
+          accessibilityRole="button"
+          accessibilityLabel="Search transactions"
+          style={styles.iconBtn}
+        >
+          <Feather
+            name="search"
+            size={20}
+            color={filterOpen ? colors.primary : colors.textSecondary}
+          />
+        </Pressable>
       </View>
 
+      {filterOpen && (
+        <View style={styles.filterPanel}>
+          <SearchBar
+            value={filter.query}
+            onChangeText={(query) => setFilter((f) => ({ ...f, query }))}
+            placeholder="Search notes and categories"
+            autoFocus
+          />
+          <CategoryFilter
+            selected={filter.category}
+            onSelect={(category) => setFilter((f) => ({ ...f, category }))}
+          />
+          <DateField
+            label="From"
+            value={filter.from}
+            onChange={(from) => setFilter((f) => ({ ...f, from }))}
+          />
+          <DateField
+            label="To"
+            value={filter.to}
+            onChange={(to) => setFilter((f) => ({ ...f, to }))}
+          />
+        </View>
+      )}
+
       <FlatList
-        data={monthTxs}
+        data={filtering ? results : monthTxs}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ListHeaderComponent={
+          filtering ? (
+            <View style={styles.resultsHeader}>
+              <Typography variant="caption" secondary>
+                {results.length === 1 ? '1 result' : `${results.length} results`}
+              </Typography>
+              <View style={styles.balanceRow}>
+                <Typography variant="caption" secondary>Income</Typography>
+                <Typography variant="body" style={{ color: colors.success }}>
+                  +{formatMoney(Math.abs(resultSummary.totalIncome), currency)}
+                </Typography>
+              </View>
+              <View style={styles.balanceRow}>
+                <Typography variant="caption" secondary>Expenses</Typography>
+                <Typography variant="body" style={{ color: colors.destructive }}>
+                  −{formatMoney(Math.abs(resultSummary.totalExpenses), currency)}
+                </Typography>
+              </View>
+              <View style={styles.balanceRow}>
+                <Typography variant="caption">Net</Typography>
+                <Typography
+                  variant="body"
+                  style={{ color: resultSummary.balance < 0 ? colors.destructive : colors.text }}
+                >
+                  {formatMoney(resultSummary.balance, currency)}
+                </Typography>
+              </View>
+            </View>
+          ) : (
           <View>
             <Card style={styles.balanceCard}>
               <View style={styles.balanceRow}>
@@ -133,9 +231,14 @@ export default function ExpensesScreen() {
             </Card>
             <CategoryBreakdown items={breakdown} currency={currency} />
           </View>
+          )
         }
         ListEmptyComponent={
-          <EmptyState message="No transactions this month" icon="credit-card" />
+          filtering ? (
+            <EmptyState message="No matching transactions" icon="search" />
+          ) : (
+            <EmptyState message="No transactions this month" icon="credit-card" />
+          )
         }
       />
 
@@ -146,7 +249,7 @@ export default function ExpensesScreen() {
         onClose={() => setModalVisible(false)}
         title="Add Transaction"
       >
-        <TransactionForm submitLabel="Save" onSubmit={handleSave} />
+        <TransactionForm initial={{ date: dayStart }} submitLabel="Save" onSubmit={handleSave} />
       </Modal>
     </Screen>
   );
@@ -157,6 +260,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.sm,
+  },
+  spacer: {
+    flex: 1,
+  },
+  iconBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterPanel: {
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  resultsHeader: {
+    marginBottom: spacing.md,
   },
   balanceCard: {
     marginBottom: spacing.md,

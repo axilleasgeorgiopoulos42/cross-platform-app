@@ -18,7 +18,6 @@ import { useExpenseStore } from '../../src/domains/expenses/store';
 import { useSettingsStore } from '../../src/domains/settings/store';
 import { filterByMonth, summarize } from '../../src/domains/expenses/summary';
 import { formatMoney } from '../../src/lib/money';
-import { startOfDay } from '../../src/lib/dates';
 import { useTodayStart } from '../../src/hooks/useTodayStart';
 import { useTheme } from '../../src/hooks/useTheme';
 import { spacing } from '../../src/constants/theme';
@@ -67,7 +66,7 @@ export default function TodayScreen() {
 
   const handleAddEvent = useCallback(
     async (values: EventFormValues) => {
-      await addEvent(values.title, startOfDay(Date.now()), values.time, values.notes);
+      await addEvent(values.title, values.date, values.time, values.notes);
       setQuickAdd(null);
     },
     [addEvent],
@@ -75,7 +74,7 @@ export default function TodayScreen() {
 
   const handleAddExpense = useCallback(
     async (values: TransactionFormValues) => {
-      await addTransaction({ ...values, date: Date.now() });
+      await addTransaction(values);
       setQuickAdd(null);
     },
     [addTransaction],
@@ -141,10 +140,10 @@ export default function TodayScreen() {
       </View>
 
       <Modal visible={quickAdd === 'event'} onClose={closeModal} title="Add Event">
-        <EventForm submitLabel="Save" onSubmit={handleAddEvent} />
+        <EventForm initial={{ date: dayStart }} submitLabel="Save" onSubmit={handleAddEvent} />
       </Modal>
       <Modal visible={quickAdd === 'expense'} onClose={closeModal} title="Add Expense">
-        <TransactionForm submitLabel="Save" onSubmit={handleAddExpense} />
+        <TransactionForm initial={{ date: dayStart }} submitLabel="Save" onSubmit={handleAddExpense} />
       </Modal>
     </Screen>
   );

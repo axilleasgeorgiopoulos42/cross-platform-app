@@ -9,6 +9,7 @@ Compact, chronological record of what was asked and what was done in this projec
 - **Layers:** SQLite -> services (`src/domains/*/service.ts`, take `db`) -> Zustand stores (`store.ts`, call `getDb()`) -> screens/components. Components never import services or `getDb`. See `ARCHITECTURE.md`, `DEVELOPMENT.md`, `API.md`, `README.md`.
 - **Repos (important):** this app has **its own git repo** (`cross-platform-app/.git`, remote `github.com/axilleasgeorgiopoulos42/cross-platform-app`). The folder sits inside a larger home-directory git repo; **never commit app files to the outer repo**. Plans/specs were first written to the outer repo (`Projects/docs/superpowers/{plans,specs}`); copies live in `docs/history/` here.
 - **Deploy:** Vercel project `lsg10/cross-platform-app`, GitHub-connected (push to `main` auto-deploys to production; other branches get preview deployments). Production URL: https://cross-platform-app-navy.vercel.app . The user installs it on an iPhone via Safari > Share > Add to Home Screen (web app; there is **no** web manifest, so it is not a real PWA). `vercel.json` sets COOP/COEP headers (needed by wa-sqlite) and an SPA rewrite. `metro.config.js` adds `wasm` to `assetExts`.
+- **Features / branch status:** screens are Today, Calendar, Expenses, event and transaction detail, Settings. Event and transaction forms have a date field (`DateField`; web `<input type=date>`, native `@react-native-community/datetimepicker`), and Calendar and Expenses have search (Expenses also category and From/To filters). Branch `feat/dates-and-search` holds this work (9 commits after `9859531`, docs included), unpushed and unmerged pending the final review; `main` does not have it yet.
 - **Native / Expo Go:** the user could not get Expo Go working; EAS builds were investigated but not set up (EAS CLI not logged in; iOS native distribution needs a paid Apple Developer account). Web is the supported target.
 - **Review/process tooling used:** superpowers skills (brainstorming, writing-plans, subagent-driven-development, finishing-a-development-branch) and ui-ux-pro-max. The SDD ledger lived in `.superpowers/sdd/<plan>/` (git-ignored; deleted at the end), so its rulings and deferred items are preserved in sections 4-5 below.
 
@@ -41,6 +42,8 @@ Session B (this log's first session):
 15. "on the expenses the reload does not work" / "Still does the same" -> could not reproduce (preview routes 200, no headless browser available); asked for URL + symptom. "merge to main and lets see from there" -> merged `feat/v2-screens-features` into `main` (`d97730d`), pushed; production redeployed, `/expenses`, `/calendar`, `/settings` now return 200 on https://cross-platform-app-navy.vercel.app. Reload symptom still unconfirmed on the phone.
 16. Sage glass theme brief (palette, frosted cards/tab bar, accent glow, 12/20px radii, weights 400/600, 0.35s transitions) -> tokens in `src/constants/theme.ts` (+ `card`, `tabBar`, `glow`), helpers in `src/lib/glass.ts` (web-only backdrop blur/transition/glow), Card/Button/FAB/Modal/Screen/tab bar restyled; tab bar floats over content (Screen/FAB inset by `tabBarHeight`). Branch `feat/sage-theme`, preview only; native has translucent fill without blur.
 17. "merge it" -> merged `feat/sage-theme` into `main` and pushed; production redeploys.
+18. Dates and search (sub-project 1; spec/plan commits `0bf6e0c`, `9859531`) -> built on branch `feat/dates-and-search` with subagent-driven development: date helpers `a1ed29f`; event search, text matching and all-events loading `d609e81` + fix `cb5152a` (Greek final sigma, store/sort tests); transaction filter `a09924c`; `DateField`/`SearchBar`/`CategoryFilter` `f70624a`; date field on the event form `b7ad2d1` and expense form `9069d84`; calendar search `0d64729`; expenses search and filters `c008309`; docs (Task 9, the last commit on the branch). Rulings: search is accent- and Greek-final-sigma-insensitive; spec requirement R4 was stale, so no store signature change (`addEvent` unchanged); Today screens use `dayStart` from `useTodayStart` for default dates because `Date.now()` in render fails react-hooks/purity; push held back until the final review. Deferred minors are in section 6. Not pushed or merged yet.
+19. "Prossed" (proceed) -> final self-review of `feat/dates-and-search` (jest 116 pass, tsc + lint clean, no blocking findings); pushed the branch for a Vercel preview. `main` untouched; section 7 manual checks are the user's.
 
 ## 4. Plan v2 execution record (branch `feat/v2-screens-features`, base `7ecfac1`)
 
@@ -82,16 +85,28 @@ Verification state: `npx jest`, `npx tsc --noEmit`, `npx expo lint`, `npx expo e
 
 ## 6. Open backlog (deferred minors; none blocks merge unless noted)
 
-- Forms have no date field: cannot move an event to another day or backdate an expense (plan gap; worth a follow-up now that Expenses filters by month).
 - Docs: `API.md` omits that `calendarService.update` / `expenseService.update` also throw `Event title cannot be empty` / `Amount must be greater than 0`, and documents `exportBackup`/`importBackup`/`clearData` as plain values (they return Promises); README says "PWA" but there is no manifest (add one or reword).
 - `refreshStores()` runs in the same `try` as `restoreBackup` (a reload failure after a successful restore looks like a failed import).
 - DST tests pass trivially in a non-DST timezone (pin `TZ` in jest); `isSameLocalDay` is unused in production code; inline `dayEnd` duplicates `startOfNextDay` in places.
 - UI polish: net 0 shown green; "All time" row not red when negative and under-labelled; hitSlop overlap between next-chevron and Today button; `CategoryBreakdown` rows lack combined a11y label; chips use role button not radio; error texts lack `accessibilityRole="alert"`; no `KeyboardAvoidingView` on native; invalid time only shows a red border; inputs lack accessibility labels.
 - Tests: no component-level tests for forms; no store-level test for backup import ordering; settings `Unsupported theme` / partial-patch cases untested; `testDb.ts` uses `as any` casts and only array params.
 - Re-review minors: no sequence guard in `loadToday`; Calendar month list not refreshed on app resume; failed Expenses add closes the modal and drops input.
+- Dates and search minors: iOS native picker may need two taps / a different display mode; web date error is not linked via `aria-invalid`/`aria-describedby`; an empty Safari date input has no hint; native `DateField` cannot clear a date; calendar search results show month+day without the year; "No matching events" may flash before data loads; an inverted From>To range silently returns zero results; un-indented ternary in the `expenses.tsx` header; add modals left open across midnight keep a stale default date; prettier noise in `calendar.tsx`.
 - Small: `.gitignore` blanket `.env*`; settingsService `this.get` pattern; migration v2 step could be one transaction; `tsconfig` `types: ["jest","node"]` makes jest globals visible in app code; fetch failure on detail screens shows "Not found".
 
 ## 7. Next steps and manual checks (owner: the user, on a Vercel preview, with throwaway data)
+
+Dates and search (branch `feat/dates-and-search`, not yet pushed; the controller pushes after the final review, which creates the preview; do not merge to `main` before these pass):
+
+1. Add an event on a chosen date from the Calendar tab and from Today; confirm it appears on that day.
+2. Edit an event into another month and find it there.
+3. Add backdated and future expenses; the Expenses view jumps to that month.
+4. Clear a date field: Save is blocked and the error shows.
+5. Search events by title and by notes, with Greek text (accents, final sigma) and with `(`.
+6. Expenses: search plus category plus From/To together.
+7. Dark theme; reload during an open search.
+
+Earlier checks (v2 branch, mostly done when it was merged):
 
 1. Push `feat/v2-screens-features` (creates a Vercel preview) and reload on `/calendar` and `/event/<id>`: must not 404.
 2. iPhone home-screen app: Settings > Export, confirm the file exists in Files, Clear all data, Import it, then try a bad file (nothing may change).
@@ -99,7 +114,7 @@ Verification state: `npx jest`, `npx tsc --noEmit`, `npx expo lint`, `npx expo e
 4. Open a detail URL directly, Save, confirm you land somewhere sensible.
 5. Calendar month -> Today -> back to Calendar with a date selected.
 6. Theme Dark + reload; currency USD on Expenses and Today.
-7. Only after 1-3 pass: merge to `main` (auto-deploys to the live app).
+7. Only after the checks pass: merge to `main` (auto-deploys to the live app).
 
 ## 8. How to maintain this file
 

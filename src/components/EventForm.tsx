@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { StyleSheet, Switch, TextInput, View } from 'react-native';
 import { Typography } from './Typography';
 import { Button } from './Button';
+import { DateField } from './DateField';
 import { useTheme } from '../hooks/useTheme';
 import { isValidTime } from '../lib/time';
 import { createSubmitGuard } from '../lib/submitGuard';
@@ -9,6 +10,7 @@ import { spacing, radius } from '../constants/theme';
 
 export interface EventFormValues {
   title: string;
+  date: number;
   time: string | null;
   notes: string | null;
 }
@@ -25,12 +27,14 @@ export function EventForm({ initial, submitLabel, onSubmit, resetOnSubmit = true
   const guard = useRef(createSubmitGuard()).current;
   const [submitting, setSubmitting] = useState(false);
   const [title, setTitle] = useState(initial?.title ?? '');
+  const [date, setDate] = useState<number | null>(initial?.date ?? null);
+  const [dateTouched, setDateTouched] = useState(false);
   const [allDay, setAllDay] = useState(initial?.time == null);
   const [time, setTime] = useState(initial?.time ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
 
   const timeInvalid = !allDay && time.trim() !== '' && !isValidTime(time.trim());
-  const disabled = !title.trim() || timeInvalid;
+  const disabled = !title.trim() || date == null || timeInvalid;
 
   const inputStyle = [
     styles.input,
@@ -38,17 +42,20 @@ export function EventForm({ initial, submitLabel, onSubmit, resetOnSubmit = true
   ];
 
   const handleSubmit = async () => {
-    if (disabled || guard.isRunning()) return;
+    if (disabled || date == null || guard.isRunning()) return;
     setSubmitting(true);
     try {
       await guard.run(async () => {
         await onSubmit({
           title: title.trim(),
+          date,
           time: allDay ? null : time.trim() || null,
           notes: notes.trim() || null,
         });
         if (resetOnSubmit) {
           setTitle(initial?.title ?? '');
+          setDate(initial?.date ?? null);
+          setDateTouched(false);
           setAllDay(initial?.time == null);
           setTime(initial?.time ?? '');
           setNotes(initial?.notes ?? '');
@@ -67,6 +74,16 @@ export function EventForm({ initial, submitLabel, onSubmit, resetOnSubmit = true
         value={title}
         onChangeText={setTitle}
         style={inputStyle}
+      />
+
+      <DateField
+        label="Date"
+        value={date}
+        onChange={(ts) => {
+          setDate(ts);
+          setDateTouched(true);
+        }}
+        error={dateTouched && date == null ? 'Choose a date' : null}
       />
 
       <View style={styles.switchRow}>
