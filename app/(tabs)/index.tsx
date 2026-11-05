@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Screen } from '../../src/components/Screen';
 import { Typography } from '../../src/components/Typography';
@@ -8,10 +8,10 @@ import { EventItem } from '../../src/components/EventItem';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FAB } from '../../src/components/FAB';
 import { Modal } from '../../src/components/Modal';
-import { Button } from '../../src/components/Button';
+import { EventForm, type EventFormValues } from '../../src/components/EventForm';
 import { useCalendarStore } from '../../src/domains/calendar/store';
 import { useTheme } from '../../src/hooks/useTheme';
-import { spacing, radius } from '../../src/constants/theme';
+import { spacing } from '../../src/constants/theme';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -39,9 +39,6 @@ export default function CalendarScreen() {
   } = useCalendarStore();
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [title, setTitle] = useState('');
-  const [allDay, setAllDay] = useState(true);
-  const [time, setTime] = useState('');
 
   useEffect(() => {
     loadMonth(currentMonth.year, currentMonth.month);
@@ -57,14 +54,14 @@ export default function CalendarScreen() {
     return events.filter((e) => e.date >= dayStart && e.date <= dayEnd);
   }, [events, selectedDate]);
 
-  const handleSave = useCallback(async () => {
-    if (!title.trim() || selectedDate == null) return;
-    await addEvent(title.trim(), selectedDate, allDay ? null : time || null);
-    setTitle('');
-    setTime('');
-    setAllDay(true);
-    setModalVisible(false);
-  }, [title, selectedDate, allDay, time, addEvent]);
+  const handleSave = useCallback(
+    async (values: EventFormValues) => {
+      if (selectedDate == null) return;
+      await addEvent(values.title, selectedDate, values.time, values.notes);
+      setModalVisible(false);
+    },
+    [selectedDate, addEvent],
+  );
 
   const handleDelete = useCallback(
     (id: string) => deleteEvent(id),
@@ -125,53 +122,7 @@ export default function CalendarScreen() {
         onClose={() => setModalVisible(false)}
         title="Add Event"
       >
-        <TextInput
-          placeholder="Event title"
-          placeholderTextColor={colors.textSecondary}
-          value={title}
-          onChangeText={setTitle}
-          style={[
-            styles.input,
-            {
-              color: colors.text,
-              borderColor: colors.border,
-              backgroundColor: colors.surface,
-            },
-          ]}
-        />
-
-        <View style={styles.switchRow}>
-          <Typography variant="body">All day</Typography>
-          <Switch
-            value={allDay}
-            onValueChange={setAllDay}
-            trackColor={{ true: colors.primary, false: colors.border }}
-          />
-        </View>
-
-        {!allDay && (
-          <TextInput
-            placeholder="Time (e.g. 14:30)"
-            placeholderTextColor={colors.textSecondary}
-            value={time}
-            onChangeText={setTime}
-            style={[
-              styles.input,
-              {
-                color: colors.text,
-                borderColor: colors.border,
-                backgroundColor: colors.surface,
-              },
-            ]}
-          />
-        )}
-
-        <Button
-          title="Save"
-          onPress={handleSave}
-          disabled={!title.trim()}
-          style={styles.saveBtn}
-        />
+        <EventForm submitLabel="Save" onSubmit={handleSave} />
       </Modal>
     </Screen>
   );
@@ -187,21 +138,5 @@ const styles = StyleSheet.create({
   eventSection: {
     marginTop: spacing.lg,
     flex: 1,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    fontSize: 16,
-    marginBottom: spacing.sm,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  saveBtn: {
-    marginTop: spacing.sm,
   },
 });

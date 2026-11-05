@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { Screen } from '../../src/components/Screen';
 import { Typography } from '../../src/components/Typography';
 import { Card } from '../../src/components/Card';
-import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FAB } from '../../src/components/FAB';
 import { Modal } from '../../src/components/Modal';
 import { TransactionItem } from '../../src/components/TransactionItem';
-import { CategoryPicker } from '../../src/components/CategoryPicker';
+import {
+  TransactionForm,
+  type TransactionFormValues,
+} from '../../src/components/TransactionForm';
 import { useExpenseStore } from '../../src/domains/expenses/store';
-import type { Category, Transaction } from '../../src/domains/expenses/types';
+import type { Transaction } from '../../src/domains/expenses/types';
 import { useTheme } from '../../src/hooks/useTheme';
-import { spacing, radius } from '../../src/constants/theme';
+import { spacing } from '../../src/constants/theme';
 
 export default function ExpensesScreen() {
   const { colors } = useTheme();
@@ -25,31 +27,18 @@ export default function ExpensesScreen() {
   } = useExpenseStore();
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [type, setType] = useState<'income' | 'expense'>('expense');
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState<Category>('other');
-  const [note, setNote] = useState('');
 
   useEffect(() => {
     loadTransactions();
   }, []);
 
-  const handleSave = useCallback(async () => {
-    const parsed = parseFloat(amount);
-    if (!parsed || parsed <= 0) return;
-    await addTransaction({
-      type,
-      amount: parsed,
-      category: type === 'income' ? 'other' : category,
-      note: note.trim() || null,
-      date: Date.now(),
-    });
-    setAmount('');
-    setNote('');
-    setCategory('other');
-    setType('expense');
-    setModalVisible(false);
-  }, [type, amount, category, note, addTransaction]);
+  const handleSave = useCallback(
+    async (values: TransactionFormValues) => {
+      await addTransaction({ ...values, date: Date.now() });
+      setModalVisible(false);
+    },
+    [addTransaction],
+  );
 
   const handleDelete = useCallback(
     (id: string) => deleteTransaction(id),
@@ -105,66 +94,7 @@ export default function ExpensesScreen() {
         onClose={() => setModalVisible(false)}
         title="Add Transaction"
       >
-        <View style={styles.typeToggle}>
-          <Button
-            title="Income"
-            variant={type === 'income' ? 'primary' : 'secondary'}
-            onPress={() => setType('income')}
-            style={styles.toggleBtn}
-          />
-          <Button
-            title="Expense"
-            variant={type === 'expense' ? 'primary' : 'secondary'}
-            onPress={() => setType('expense')}
-            style={styles.toggleBtn}
-          />
-        </View>
-
-        <TextInput
-          placeholder="0.00"
-          placeholderTextColor={colors.textSecondary}
-          keyboardType="decimal-pad"
-          value={amount}
-          onChangeText={setAmount}
-          style={[
-            styles.amountInput,
-            {
-              color: colors.text,
-              borderColor: colors.border,
-              backgroundColor: colors.surface,
-            },
-          ]}
-        />
-
-        {type === 'expense' && (
-          <CategoryPicker
-            selected={category}
-            onSelect={setCategory}
-            type={type}
-          />
-        )}
-
-        <TextInput
-          placeholder="Add a note..."
-          placeholderTextColor={colors.textSecondary}
-          value={note}
-          onChangeText={setNote}
-          style={[
-            styles.input,
-            {
-              color: colors.text,
-              borderColor: colors.border,
-              backgroundColor: colors.surface,
-            },
-          ]}
-        />
-
-        <Button
-          title="Save"
-          onPress={handleSave}
-          disabled={!amount.trim() || parseFloat(amount) <= 0 || isNaN(parseFloat(amount))}
-          style={styles.saveBtn}
-        />
+        <TransactionForm submitLabel="Save" onSubmit={handleSave} />
       </Modal>
     </Screen>
   );
@@ -189,33 +119,5 @@ const styles = StyleSheet.create({
   list: {
     flexGrow: 1,
     paddingBottom: 80,
-  },
-  typeToggle: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  toggleBtn: {
-    flex: 1,
-  },
-  amountInput: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    fontSize: 24,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    fontSize: 16,
-    marginBottom: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  saveBtn: {
-    marginTop: spacing.sm,
   },
 });
