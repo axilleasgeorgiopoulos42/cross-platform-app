@@ -7,6 +7,8 @@ import { useTheme } from '../hooks/useTheme';
 import { spacing } from '../constants/theme';
 import type { Transaction } from '../domains/expenses/types';
 import { confirmAction } from '../lib/confirm';
+import { formatMoney } from '../lib/money';
+import { useSettingsStore } from '../domains/settings/store';
 import { CATEGORIES, INCOME_ICON } from '../constants/categories';
 
 interface TransactionItemProps {
@@ -16,6 +18,7 @@ interface TransactionItemProps {
 
 export function TransactionItem({ transaction, onDelete }: TransactionItemProps) {
   const { colors } = useTheme();
+  const currency = useSettingsStore((s) => s.settings.currency);
 
   const icon =
     transaction.type === 'income'
@@ -68,7 +71,7 @@ export function TransactionItem({ transaction, onDelete }: TransactionItemProps)
         </View>
 
         <Typography variant="body" style={{ color: amountColor }}>
-          {amountPrefix}{transaction.amount.toFixed(2)}
+          {amountPrefix}{formatMoney(Math.abs(transaction.amount), currency)}
         </Typography>
 
         </Pressable>

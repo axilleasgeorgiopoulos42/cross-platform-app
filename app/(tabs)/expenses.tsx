@@ -13,11 +13,14 @@ import {
 } from '../../src/components/TransactionForm';
 import { useExpenseStore } from '../../src/domains/expenses/store';
 import type { Transaction } from '../../src/domains/expenses/types';
+import { useSettingsStore } from '../../src/domains/settings/store';
+import { formatMoney } from '../../src/lib/money';
 import { useTheme } from '../../src/hooks/useTheme';
 import { spacing } from '../../src/constants/theme';
 
 export default function ExpensesScreen() {
   const { colors } = useTheme();
+  const currency = useSettingsStore((s) => s.settings.currency);
   const {
     transactions,
     balance,
@@ -60,19 +63,19 @@ export default function ExpensesScreen() {
         <View style={styles.balanceRow}>
           <Typography variant="caption" secondary>Income</Typography>
           <Typography variant="body" style={{ color: colors.success }}>
-            +{balance.totalIncome.toFixed(2)}
+            +{formatMoney(Math.abs(balance.totalIncome), currency)}
           </Typography>
         </View>
         <View style={styles.balanceRow}>
           <Typography variant="caption" secondary>Expenses</Typography>
           <Typography variant="body" style={{ color: colors.destructive }}>
-            −{balance.totalExpenses.toFixed(2)}
+            −{formatMoney(Math.abs(balance.totalExpenses), currency)}
           </Typography>
         </View>
         <View style={[styles.balanceRow, styles.totalRow]}>
           <Typography variant="caption">Balance</Typography>
           <Typography variant="h1" style={{ color: balanceColor }}>
-            {balance.balance.toFixed(2)}
+            {formatMoney(balance.balance, currency)}
           </Typography>
         </View>
       </Card>

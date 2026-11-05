@@ -5,9 +5,11 @@ import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../src/hooks/useTheme';
 import { getDb } from '../src/db/client';
 import { runMigrations } from '../src/db/migrations';
+import { useSettingsStore } from '../src/domains/settings/store';
 
 export default function RootLayout() {
   const { colors, isDark } = useTheme();
+  const settingsLoaded = useSettingsStore((s) => s.loaded);
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
 
@@ -16,6 +18,7 @@ export default function RootLayout() {
       try {
         const db = await getDb();
         await runMigrations(db);
+        await useSettingsStore.getState().load();
         setDbReady(true);
       } catch (e) {
         console.error('DB init failed:', e);
@@ -34,7 +37,7 @@ export default function RootLayout() {
     );
   }
 
-  if (!dbReady) return null;
+  if (!dbReady || !settingsLoaded) return null;
 
   return (
     <>
@@ -47,8 +50,10 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.background },
         }}
       >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="event/[id]" options={{ title: 'Event' }} />
         <Stack.Screen name="transaction/[id]" options={{ title: 'Transaction' }} />
+        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       </Stack>
     </>
   );
