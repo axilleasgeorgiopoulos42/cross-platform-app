@@ -57,7 +57,7 @@ export default function ExpensesScreen() {
 
   useEffect(() => {
     loadTransactions();
-  }, []);
+  }, [loadTransactions]);
 
   const handleSave = useCallback(
     async (values: TransactionFormValues) => {

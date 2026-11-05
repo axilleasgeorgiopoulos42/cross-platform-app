@@ -36,16 +36,17 @@ export default function TodayScreen() {
   const currency = useSettingsStore((s) => s.settings.currency);
 
   const [quickAdd, setQuickAdd] = useState<QuickAdd>(null);
+  const [now, setNow] = useState(() => new Date());
 
   useFocusEffect(
     useCallback(() => {
-      const now = new Date();
-      loadMonth(now.getFullYear(), now.getMonth());
+      const fresh = new Date();
+      setNow(fresh);
+      loadMonth(fresh.getFullYear(), fresh.getMonth());
       loadTransactions();
     }, [loadMonth, loadTransactions]),
   );
 
-  const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();
   const dayStart = startOfDay(now.getTime());
@@ -135,7 +136,7 @@ export default function TodayScreen() {
       </View>
 
       <View style={styles.eventSection}>
-        <Typography variant="h3">Today's events</Typography>
+        <Typography variant="h3">Today&apos;s events</Typography>
         {todaysEvents.length === 0 ? (
           <EmptyState message="Nothing planned today" icon="sun" />
         ) : (

@@ -18,23 +18,24 @@ export default function EventDetailScreen() {
   const updateEvent = useCalendarStore((s) => s.updateEvent);
   const deleteEvent = useCalendarStore((s) => s.deleteEvent);
 
-  const [event, setEvent] = useState<CalendarEvent | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<{ id: string | undefined; found: CalendarEvent | null } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     (async () => {
       const found = id ? await fetchEvent(id) : null;
       if (cancelled) return;
-      setEvent(found);
-      setLoading(false);
+      setResult({ id, found });
     })();
     return () => {
       cancelled = true;
     };
   }, [id, fetchEvent]);
+
+  // Loading is derived: a result only counts if it was fetched for the current id.
+  const loading = result === null || result.id !== id;
+  const event = loading ? null : result.found;
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) router.back();

@@ -77,9 +77,10 @@ export default function SettingsScreen() {
   }, [clearBackupError, clearSettingsError]);
 
   useEffect(() => {
-    clearAllErrors();
+    clearBackupError();
+    clearSettingsError();
     return clearAllErrors;
-  }, [clearAllErrors]);
+  }, [clearAllErrors, clearBackupError, clearSettingsError]);
 
   const shownError = fileError ?? backupError ?? settingsError;
 

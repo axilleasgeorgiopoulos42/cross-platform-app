@@ -18,23 +18,24 @@ export default function TransactionDetailScreen() {
   const updateTransaction = useExpenseStore((s) => s.updateTransaction);
   const deleteTransaction = useExpenseStore((s) => s.deleteTransaction);
 
-  const [transaction, setTransaction] = useState<Transaction | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<{ id: string | undefined; found: Transaction | null } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     (async () => {
       const found = id ? await fetchTransaction(id) : null;
       if (cancelled) return;
-      setTransaction(found);
-      setLoading(false);
+      setResult({ id, found });
     })();
     return () => {
       cancelled = true;
     };
   }, [id, fetchTransaction]);
+
+  // Loading is derived: a result only counts if it was fetched for the current id.
+  const loading = result === null || result.id !== id;
+  const transaction = loading ? null : result.found;
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) router.back();

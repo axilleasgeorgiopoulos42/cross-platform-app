@@ -21,7 +21,6 @@ export default function CalendarScreen() {
     events,
     selectedDate,
     currentMonth,
-    loading,
     loadMonth,
     selectDate,
     addEvent,
@@ -33,10 +32,12 @@ export default function CalendarScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    loadMonth(currentMonth.year, currentMonth.month);
+    // Mount-only load of whichever month the store currently holds.
+    const s = useCalendarStore.getState();
+    s.loadMonth(s.currentMonth.year, s.currentMonth.month);
   }, []);
 
-  const today = useMemo(() => startOfDay(Date.now()), []);
+  const [today] = useState(() => startOfDay(Date.now()));
 
   const panHandlers = useSwipe({ onLeft: nextMonth, onRight: prevMonth });
 

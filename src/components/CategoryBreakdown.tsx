@@ -9,7 +9,7 @@ import { formatMoney } from '../lib/money';
 import { radius, spacing } from '../constants/theme';
 
 interface CategoryBreakdownProps {
-  items: Array<{ category: Category; total: number; share: number }>;
+  items: { category: Category; total: number; share: number }[];
   currency: Currency;
 }
 

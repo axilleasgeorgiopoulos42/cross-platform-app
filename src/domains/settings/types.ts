@@ -9,4 +9,4 @@ export interface AppSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = { currency: 'EUR', theme: 'system' };
 
-export const THEME_PREFERENCES: ReadonlyArray<ThemePreference> = ['system', 'light', 'dark'];
+export const THEME_PREFERENCES: readonly ThemePreference[] = ['system', 'light', 'dark'];
