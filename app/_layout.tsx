@@ -46,7 +46,10 @@ export default function RootLayout() {
           headerShadowVisible: false,
           contentStyle: { backgroundColor: colors.background },
         }}
-      />
+      >
+        <Stack.Screen name="event/[id]" options={{ title: 'Event' }} />
+        <Stack.Screen name="transaction/[id]" options={{ title: 'Transaction' }} />
+      </Stack>
     </>
   );
 }
