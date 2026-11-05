@@ -45,7 +45,7 @@ export default function EventDetailScreen() {
   const finish = () => {
     const err = useCalendarStore.getState().error;
     if (err) setErrorMsg(err);
-    else router.back();
+    else goBack();
   };
 
   const handleSave = async (values: EventFormValues) => {

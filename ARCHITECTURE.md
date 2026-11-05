@@ -38,7 +38,7 @@ Dates are epoch milliseconds.
 
 - Platform files use `.web.ts` pairs: `src/lib/confirm.ts` (`Alert.alert`) vs `confirm.web.ts` (`window.confirm`); `src/lib/files.ts` (native stub that throws) vs `files.web.ts` (download/pick a text file). Hence the backup UI is web-only.
 - On web, expo-sqlite runs on wa-sqlite (WebAssembly). `metro.config.js` adds `wasm` to `assetExts` so the bundler serves it.
-- `vercel.json` sends `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: credentialless` (cross-origin isolation for the web SQLite build) and sets the build to `npx expo export --platform web` with output `dist`.
+- `vercel.json` sends `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: credentialless` (cross-origin isolation for the web SQLite build) and sets the build to `npx expo export --platform web` with output `dist`. A catch-all rewrite to `/index.html` serves the SPA for deep links and reloads (real files are served first).
 
 ## Testing
 

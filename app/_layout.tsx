@@ -7,6 +7,10 @@ import { getDb } from '../src/db/client';
 import { runMigrations } from '../src/db/migrations';
 import { useSettingsStore } from '../src/domains/settings/store';
 
+// Deep links / reloads on a detail screen get the tabs underneath (back button works).
+// SDK 58 expo-router deprecates `initialRouteName` in favour of `anchor`.
+export const unstable_settings = { anchor: '(tabs)' };
+
 export default function RootLayout() {
   const { colors, isDark } = useTheme();
   const settingsLoaded = useSettingsStore((s) => s.loaded);

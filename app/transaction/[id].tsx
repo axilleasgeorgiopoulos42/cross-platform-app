@@ -45,7 +45,7 @@ export default function TransactionDetailScreen() {
   const finish = () => {
     const err = useExpenseStore.getState().error;
     if (err) setErrorMsg(err);
-    else router.back();
+    else goBack();
   };
 
   const handleSave = async (values: TransactionFormValues) => {
