@@ -58,11 +58,10 @@ export default function CalendarScreen() {
 
   const handleSave = useCallback(
     async (values: EventFormValues) => {
-      if (selectedDate == null) return;
-      await addEvent(values.title, selectedDate, values.time, values.notes);
+      await addEvent(values.title, values.date, values.time, values.notes);
       setModalVisible(false);
     },
-    [selectedDate, addEvent],
+    [addEvent],
   );
 
   const handleDelete = useCallback(
@@ -133,7 +132,7 @@ export default function CalendarScreen() {
         onClose={() => setModalVisible(false)}
         title="Add Event"
       >
-        <EventForm submitLabel="Save" onSubmit={handleSave} />
+        <EventForm initial={{ date: selectedDate ?? undefined }} submitLabel="Save" onSubmit={handleSave} />
       </Modal>
     </Screen>
   );
