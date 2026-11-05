@@ -60,8 +60,14 @@ export function RangePicker({ range, onChange }: RangePickerProps) {
   };
 
   const selectPreset = (preset: RangePreset) => {
-    if (preset === 'custom') onChange(customRange(range.from, range.to));
-    else onChange(rangeFor(preset, range.from));
+    if (preset === 'custom') {
+      // Re-seed the drafts (also when Custom is re-tapped) so a stale invalid draft/error clears.
+      setDraftFrom(range.from);
+      setDraftTo(range.to);
+      onChange(customRange(range.from, range.to));
+    } else {
+      onChange(rangeFor(preset, range.from));
+    }
   };
 
   return (
