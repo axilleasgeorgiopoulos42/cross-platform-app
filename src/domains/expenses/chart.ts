@@ -87,3 +87,9 @@ export function visibleLabelIndexes(count: number, max: number = 6): number[] {
   for (let i = 0; i < max; i++) out.push(Math.round((i * (count - 1)) / (max - 1)));
   return out;
 }
+
+/** Bar height in px: proportional to `max`, clamped to [0, plotHeight]; 0 when `max` is not positive. */
+export function barHeight(total: number, max: number, plotHeight: number): number {
+  if (!(max > 0) || !(total > 0)) return 0;
+  return Math.min(plotHeight, (total / max) * plotHeight);
+}

@@ -1,4 +1,5 @@
 import {
+  barHeight,
   bucketExpenses,
   bucketGranularity,
   visibleLabelIndexes,
@@ -132,5 +133,20 @@ describe('visibleLabelIndexes', () => {
   test('small and empty counts', () => {
     expect(visibleLabelIndexes(3)).toEqual([0, 1, 2]);
     expect(visibleLabelIndexes(0)).toEqual([]);
+  });
+});
+
+describe('barHeight', () => {
+  it('scales proportionally to the max', () => {
+    expect(barHeight(50, 100, 140)).toBe(70);
+    expect(barHeight(100, 100, 140)).toBe(140);
+  });
+  it('is 0 when max is 0 (no NaN)', () => {
+    expect(barHeight(0, 0, 140)).toBe(0);
+    expect(barHeight(5, 0, 140)).toBe(0);
+  });
+  it('never exceeds the plot height or goes negative', () => {
+    expect(barHeight(1e12, 1, 140)).toBe(140);
+    expect(barHeight(-5, 10, 140)).toBe(0);
   });
 });

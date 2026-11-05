@@ -16,6 +16,7 @@ export { MonthSwitcher } from './MonthSwitcher';
 export { RangePicker } from './RangePicker';
 export { Screen } from './Screen';
 export { SearchBar } from './SearchBar';
+export { SpendChart } from './SpendChart';
 export { TransactionForm } from './TransactionForm';
 export type { TransactionFormValues } from './TransactionForm';
 export { TransactionItem } from './TransactionItem';
