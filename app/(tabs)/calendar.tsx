@@ -12,6 +12,7 @@ import { EventForm, type EventFormValues } from '../../src/components/EventForm'
 import { useCalendarStore } from '../../src/domains/calendar/store';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useSwipe } from '../../src/hooks/useSwipe';
+import { useTodayStart } from '../../src/hooks/useTodayStart';
 import { startOfDay } from '../../src/lib/dates';
 import { spacing } from '../../src/constants/theme';
 
@@ -37,7 +38,7 @@ export default function CalendarScreen() {
     s.loadMonth(s.currentMonth.year, s.currentMonth.month);
   }, []);
 
-  const [today] = useState(() => startOfDay(Date.now()));
+  const today = useTodayStart();
 
   const panHandlers = useSwipe({ onLeft: nextMonth, onRight: prevMonth });
 

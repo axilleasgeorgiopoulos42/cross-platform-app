@@ -18,7 +18,8 @@ import { useExpenseStore } from '../../src/domains/expenses/store';
 import { useSettingsStore } from '../../src/domains/settings/store';
 import { filterByMonth, summarize } from '../../src/domains/expenses/summary';
 import { formatMoney } from '../../src/lib/money';
-import { startOfDay, startOfNextDay } from '../../src/lib/dates';
+import { startOfDay } from '../../src/lib/dates';
+import { useTodayStart } from '../../src/hooks/useTodayStart';
 import { useTheme } from '../../src/hooks/useTheme';
 import { spacing } from '../../src/constants/theme';
 
@@ -26,8 +27,8 @@ type QuickAdd = 'event' | 'expense' | null;
 
 export default function TodayScreen() {
   const { colors } = useTheme();
-  const events = useCalendarStore((s) => s.events);
-  const loadMonth = useCalendarStore((s) => s.loadMonth);
+  const todaysEvents = useCalendarStore((s) => s.todayEvents);
+  const loadToday = useCalendarStore((s) => s.loadToday);
   const addEvent = useCalendarStore((s) => s.addEvent);
   const deleteEvent = useCalendarStore((s) => s.deleteEvent);
   const transactions = useExpenseStore((s) => s.transactions);
@@ -36,26 +37,19 @@ export default function TodayScreen() {
   const currency = useSettingsStore((s) => s.settings.currency);
 
   const [quickAdd, setQuickAdd] = useState<QuickAdd>(null);
-  const [now, setNow] = useState(() => new Date());
 
-  useFocusEffect(
-    useCallback(() => {
-      const fresh = new Date();
-      setNow(fresh);
-      loadMonth(fresh.getFullYear(), fresh.getMonth());
-      loadTransactions();
-    }, [loadMonth, loadTransactions]),
-  );
+  const reload = useCallback(() => {
+    loadToday();
+    loadTransactions();
+  }, [loadToday, loadTransactions]);
+
+  const dayStart = useTodayStart(reload);
+  const now = useMemo(() => new Date(dayStart), [dayStart]);
+
+  useFocusEffect(reload);
 
   const year = now.getFullYear();
   const month = now.getMonth();
-  const dayStart = startOfDay(now.getTime());
-  const dayEnd = startOfNextDay(now.getTime());
-
-  const todaysEvents = useMemo(
-    () => events.filter((e) => e.date >= dayStart && e.date < dayEnd),
-    [events, dayStart, dayEnd],
-  );
 
   const summary = useMemo(
     () => summarize(filterByMonth(transactions, year, month)),

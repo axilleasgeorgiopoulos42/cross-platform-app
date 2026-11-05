@@ -69,7 +69,7 @@ formatMoney(amount: number, currency: Currency): string   // en-US Intl currency
 
 ## Stores (Zustand)
 
-- `useCalendarStore`: state `events, selectedDate, currentMonth {year, month}, loading, error`; actions `loadMonth(year, month)`, `selectDate(date | null)`, `addEvent(title, date, time, notes?)`, `updateEvent(id, patch)`, `fetchEvent(id)`, `deleteEvent(id)`, `nextMonth()`, `prevMonth()`.
+- `useCalendarStore`: state `events, todayEvents, selectedDate, currentMonth {year, month}, loading, error`; actions `loadMonth(year, month)`, `loadToday()` (fills `todayEvents` for the current day without touching `currentMonth`; add/update/delete also refresh it), `selectDate(date | null)`, `addEvent(title, date, time, notes?)`, `updateEvent(id, patch)`, `fetchEvent(id)`, `deleteEvent(id)`, `nextMonth()`, `prevMonth()`.
 - `useExpenseStore`: state `transactions, balance, loading, error`; actions `loadTransactions()`, `addTransaction(data)`, `updateTransaction(id, patch)`, `fetchTransaction(id)`, `deleteTransaction(id)`.
 - `useSettingsStore`: state `settings, loaded, error`; actions `load()`, `clearError()`, `setCurrency(c)`, `setTheme(t)`.
 - `useBackupStore`: state `error`; actions `clearError()`, `exportBackup(): {filename, json} | null`, `previewBackup(text): {events, transactions} | null` (validates only), `importBackup(text): counts | null` (refreshes the other stores), `clearData(): boolean`.
