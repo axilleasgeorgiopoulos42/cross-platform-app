@@ -10,9 +10,11 @@ import type { CalendarEvent } from '../domains/calendar/types';
 interface EventItemProps {
   event: CalendarEvent;
   onDelete: (id: string) => void;
+  /** Show the short date above the time (used in search results). */
+  showDate?: boolean;
 }
 
-export function EventItem({ event, onDelete }: EventItemProps) {
+export function EventItem({ event, onDelete, showDate }: EventItemProps) {
   const { colors } = useTheme();
 
   const handleDelete = async () => {
@@ -29,6 +31,11 @@ export function EventItem({ event, onDelete }: EventItemProps) {
         style={styles.main}
       >
         <View style={styles.timeColumn}>
+          {showDate && (
+            <Typography variant="caption" style={{ fontWeight: '600' }}>
+              {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </Typography>
+          )}
           <Typography variant="caption" secondary>
             {event.time ?? 'All day'}
           </Typography>
