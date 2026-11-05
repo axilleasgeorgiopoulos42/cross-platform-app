@@ -89,6 +89,16 @@ describe('range model', () => {
     expect(validateRange(a, b)).toBeNull();
   });
 
+  test('validateRange rejects dates before 1900 and accepts 1900-01-01', () => {
+    const b = day(2026, 10, 5);
+    const early = new Date(202, 0, 1);
+    early.setFullYear(202);
+    expect(typeof validateRange(early.getTime(), b)).toBe('string');
+    expect(typeof validateRange(day(1900, 0, 1), early.getTime())).toBe('string');
+    expect(validateRange(day(1900, 0, 1), b)).toBeNull();
+    expect(typeof validateRange(day(1899, 11, 31), b)).toBe('string');
+  });
+
   test('rangeLabel', () => {
     expect(rangeLabel(rangeFor('month', day(2026, 10, 15)))).toBe('November 2026');
     expect(rangeLabel(rangeFor('year', day(2026, 10, 15)))).toBe('2026');

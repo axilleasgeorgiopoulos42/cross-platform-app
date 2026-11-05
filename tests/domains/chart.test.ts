@@ -25,6 +25,11 @@ describe('bucketGranularity', () => {
     expect(bucketGranularity(span(183))).toBe('week');
     expect(bucketGranularity(span(184))).toBe('month');
   });
+
+  test('year tier above 1100 calendar days', () => {
+    expect(bucketGranularity(span(1100))).toBe('month');
+    expect(bucketGranularity(span(1101))).toBe('year');
+  });
 });
 
 describe('bucketExpenses daily', () => {
@@ -119,6 +124,35 @@ describe('bucketExpenses monthly', () => {
     ]);
     expect(b[0].total).toBe(2);
     expect(b[11].total).toBe(3);
+  });
+});
+
+describe('bucketExpenses yearly', () => {
+  test('1900..2026 stays small and preserves in-range totals', () => {
+    const r = customRange(day(1900, 0, 1), day(2026, 11, 31));
+    const txs = [
+      tx(day(1900, 0, 1, 0), 1),
+      tx(day(1950, 5, 5), 2),
+      tx(day(2026, 11, 31, 23), 4),
+      tx(day(1899, 11, 31), 100),
+      tx(day(2027, 0, 1), 100),
+    ];
+    const b = bucketExpenses(txs, r);
+    expect(b.length).toBeLessThanOrEqual(130);
+    expect(b).toHaveLength(127);
+    expect(b[0].label).toBe('1900');
+    expect(b[b.length - 1].label).toBe('2026');
+    expect(b.reduce((s, x) => s + x.total, 0)).toBe(7);
+  });
+
+  test('first and last buckets are clamped to the range, buckets contiguous', () => {
+    const r = customRange(day(2020, 4, 10), day(2024, 7, 20));
+    const b = bucketExpenses([], r);
+    expect(b.map((x) => x.label)).toEqual(['2020', '2021', '2022', '2023', '2024']);
+    expect(b[0].start).toBe(r.from);
+    expect(b[b.length - 1].end).toBe(r.to);
+    expect(b[0].end).toBe(new Date(2021, 0, 1).getTime() - 1);
+    for (let i = 0; i < b.length - 1; i++) expect(b[i].end + 1).toBe(b[i + 1].start);
   });
 });
 

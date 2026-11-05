@@ -12,13 +12,14 @@ export interface Bucket {
   total: number;
 }
 
-type Granularity = 'day' | 'week' | 'month';
+type Granularity = 'day' | 'week' | 'month' | 'year';
 
 export function bucketGranularity(range: DateRange): Granularity {
   const days = calendarDayCount(range.from, range.to);
   if (days <= 31) return 'day';
   if (days <= 183) return 'week';
-  return 'month';
+  if (days <= 1100) return 'month';
+  return 'year';
 }
 
 const shortMonth = (m: number): string => MONTH_NAMES[m].slice(0, 3);
@@ -38,6 +39,8 @@ function nextStart(start: number, g: Granularity): number {
     }
     case 'month':
       return new Date(y, m + 1, 1).getTime();
+    case 'year':
+      return new Date(y + 1, 0, 1).getTime();
   }
 }
 
@@ -50,6 +53,8 @@ function labelFor(start: number, g: Granularity): string {
       return `${d.getDate()} ${shortMonth(d.getMonth())}`;
     case 'month':
       return shortMonth(d.getMonth());
+    case 'year':
+      return String(d.getFullYear());
   }
 }
 

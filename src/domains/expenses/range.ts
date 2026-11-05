@@ -85,8 +85,14 @@ export function shiftRange(range: DateRange, delta: 1 | -1): DateRange {
   }
 }
 
+/** Earliest year a custom range may use; also keeps chart bucket counts bounded. */
+export const MIN_RANGE_YEAR = 1900;
+
 export function validateRange(from: number | null, to: number | null): string | null {
   if (from === null || to === null) return 'Choose both a start and an end date.';
+  if (new Date(from).getFullYear() < MIN_RANGE_YEAR || new Date(to).getFullYear() < MIN_RANGE_YEAR) {
+    return `Dates before ${MIN_RANGE_YEAR} are not supported.`;
+  }
   if (startOfDay(from) > startOfDay(to)) return 'The start date must not be after the end date.';
   return null;
 }
