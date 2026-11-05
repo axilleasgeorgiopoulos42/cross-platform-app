@@ -1,7 +1,6 @@
 export { Button } from './Button';
 export { CalendarGrid } from './CalendarGrid';
 export { Card } from './Card';
-export { CategoryBreakdown } from './CategoryBreakdown';
 export { CategoryList } from './CategoryList';
 export { CategoryFilter } from './CategoryFilter';
 export { CategoryPicker } from './CategoryPicker';
