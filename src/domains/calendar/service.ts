@@ -6,6 +6,7 @@ interface EventRow {
   title: string;
   date: number;
   time: string | null;
+  notes: string | null;
   created_at: number;
 }
 
@@ -15,6 +16,7 @@ function toEvent(row: EventRow): CalendarEvent {
     title: row.title,
     date: row.date,
     time: row.time,
+    notes: row.notes,
     createdAt: row.created_at,
   };
 }
@@ -61,7 +63,7 @@ export const calendarService = {
       'INSERT INTO events (id, title, date, time, created_at) VALUES (?, ?, ?, ?, ?)',
       [id, title, data.date, data.time, createdAt],
     );
-    return { id, title, date: data.date, time: data.time, createdAt };
+    return { id, title, date: data.date, time: data.time, notes: null, createdAt };
   },
 
   async remove(db: SQLiteDatabase, id: string): Promise<void> {
