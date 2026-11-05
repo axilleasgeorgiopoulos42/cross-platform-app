@@ -1,142 +1,173 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { useCallback, useMemo, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { Screen } from '../../src/components/Screen';
 import { Typography } from '../../src/components/Typography';
-import { CalendarGrid } from '../../src/components/CalendarGrid';
+import { Card } from '../../src/components/Card';
+import { Button } from '../../src/components/Button';
 import { EventItem } from '../../src/components/EventItem';
 import { EmptyState } from '../../src/components/EmptyState';
-import { FAB } from '../../src/components/FAB';
 import { Modal } from '../../src/components/Modal';
 import { EventForm, type EventFormValues } from '../../src/components/EventForm';
+import {
+  TransactionForm,
+  type TransactionFormValues,
+} from '../../src/components/TransactionForm';
 import { useCalendarStore } from '../../src/domains/calendar/store';
+import { useExpenseStore } from '../../src/domains/expenses/store';
+import { useSettingsStore } from '../../src/domains/settings/store';
+import { filterByMonth, summarize } from '../../src/domains/expenses/summary';
+import { formatMoney } from '../../src/lib/money';
+import { startOfDay, startOfNextDay } from '../../src/lib/dates';
 import { useTheme } from '../../src/hooks/useTheme';
 import { spacing } from '../../src/constants/theme';
 
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
+type QuickAdd = 'event' | 'expense' | null;
 
-function todayTimestamp(): number {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-}
-
-export default function CalendarScreen() {
+export default function TodayScreen() {
   const { colors } = useTheme();
-  const {
-    events,
-    selectedDate,
-    currentMonth,
-    loading,
-    loadMonth,
-    selectDate,
-    addEvent,
-    deleteEvent,
-    nextMonth,
-    prevMonth,
-  } = useCalendarStore();
+  const events = useCalendarStore((s) => s.events);
+  const loadMonth = useCalendarStore((s) => s.loadMonth);
+  const addEvent = useCalendarStore((s) => s.addEvent);
+  const deleteEvent = useCalendarStore((s) => s.deleteEvent);
+  const transactions = useExpenseStore((s) => s.transactions);
+  const loadTransactions = useExpenseStore((s) => s.loadTransactions);
+  const addTransaction = useExpenseStore((s) => s.addTransaction);
+  const currency = useSettingsStore((s) => s.settings.currency);
 
-  const [modalVisible, setModalVisible] = useState(false);
+  const [quickAdd, setQuickAdd] = useState<QuickAdd>(null);
 
-  useEffect(() => {
-    loadMonth(currentMonth.year, currentMonth.month);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const now = new Date();
+      loadMonth(now.getFullYear(), now.getMonth());
+      loadTransactions();
+    }, [loadMonth, loadTransactions]),
+  );
 
-  const today = useMemo(() => todayTimestamp(), []);
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const dayStart = startOfDay(now.getTime());
+  const dayEnd = startOfNextDay(now.getTime());
 
-  const selectedEvents = useMemo(() => {
-    if (selectedDate == null) return [];
-    const d = new Date(selectedDate);
-    const dayStart = selectedDate;
-    const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() - 1;
-    return events.filter((e) => e.date >= dayStart && e.date <= dayEnd);
-  }, [events, selectedDate]);
+  const todaysEvents = useMemo(
+    () => events.filter((e) => e.date >= dayStart && e.date < dayEnd),
+    [events, dayStart, dayEnd],
+  );
 
-  const handleSave = useCallback(
+  const summary = useMemo(
+    () => summarize(filterByMonth(transactions, year, month)),
+    [transactions, year, month],
+  );
+
+  const heading = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+  const monthLabel = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const closeModal = useCallback(() => setQuickAdd(null), []);
+
+  const handleAddEvent = useCallback(
     async (values: EventFormValues) => {
-      if (selectedDate == null) return;
-      await addEvent(values.title, selectedDate, values.time, values.notes);
-      setModalVisible(false);
+      await addEvent(values.title, startOfDay(Date.now()), values.time, values.notes);
+      setQuickAdd(null);
     },
-    [selectedDate, addEvent],
+    [addEvent],
   );
 
-  const handleDelete = useCallback(
-    (id: string) => deleteEvent(id),
-    [deleteEvent],
+  const handleAddExpense = useCallback(
+    async (values: TransactionFormValues) => {
+      await addTransaction({ ...values, date: Date.now() });
+      setQuickAdd(null);
+    },
+    [addTransaction],
   );
 
-  const selectedLabel = selectedDate
-    ? new Date(selectedDate).toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'short',
-        day: 'numeric',
-      })
-    : null;
+  const handleDelete = useCallback((id: string) => deleteEvent(id), [deleteEvent]);
+
+  const net = summary.balance;
+  const netColor = net < 0 ? colors.destructive : colors.success;
+  const netText = formatMoney(net, currency);
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Pressable onPress={prevMonth} hitSlop={8}>
-          <Feather name="chevron-left" size={24} color={colors.text} />
-        </Pressable>
-        <Typography variant="h2">
-          {MONTHS[currentMonth.month]} {currentMonth.year}
+      <Typography variant="h1" style={styles.heading}>
+        {heading}
+      </Typography>
+
+      <Card style={styles.card}>
+        <Typography variant="caption" secondary>
+          {monthLabel}
         </Typography>
-        <Pressable onPress={nextMonth} hitSlop={8}>
-          <Feather name="chevron-right" size={24} color={colors.text} />
-        </Pressable>
+        <View style={styles.row}>
+          <View>
+            <Typography variant="caption" secondary>Income</Typography>
+            <Typography variant="body" style={{ color: colors.success }}>
+              +{formatMoney(Math.abs(summary.totalIncome), currency)}
+            </Typography>
+          </View>
+          <View>
+            <Typography variant="caption" secondary>Expenses</Typography>
+            <Typography variant="body" style={{ color: colors.destructive }}>
+              −{formatMoney(Math.abs(summary.totalExpenses), currency)}
+            </Typography>
+          </View>
+          <View>
+            <Typography variant="caption" secondary>Net</Typography>
+            <Typography variant="body" style={{ color: netColor, fontWeight: '600' }}>
+              {netText}
+            </Typography>
+          </View>
+        </View>
+      </Card>
+
+      <View style={styles.actions}>
+        <Button title="Add event" onPress={() => setQuickAdd('event')} style={styles.action} />
+        <Button
+          title="Add expense"
+          variant="secondary"
+          onPress={() => setQuickAdd('expense')}
+          style={styles.action}
+        />
       </View>
 
-      <CalendarGrid
-        year={currentMonth.year}
-        month={currentMonth.month}
-        events={events}
-        selectedDate={selectedDate}
-        onSelectDate={selectDate}
-        today={today}
-      />
+      <View style={styles.eventSection}>
+        <Typography variant="h3">Today's events</Typography>
+        {todaysEvents.length === 0 ? (
+          <EmptyState message="Nothing planned today" icon="sun" />
+        ) : (
+          todaysEvents.map((ev) => (
+            <EventItem key={ev.id} event={ev} onDelete={handleDelete} />
+          ))
+        )}
+      </View>
 
-      {selectedDate != null && (
-        <View style={styles.eventSection}>
-          <Typography variant="h3">{selectedLabel}</Typography>
-          {selectedEvents.length === 0 ? (
-            <EmptyState message="No events" icon="calendar" />
-          ) : (
-            selectedEvents.map((ev) => (
-              <EventItem key={ev.id} event={ev} onDelete={handleDelete} />
-            ))
-          )}
-        </View>
-      )}
-
-      <FAB
-        onPress={() => setModalVisible(true)}
-        disabled={selectedDate == null}
-      />
-
-      <Modal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        title="Add Event"
-      >
-        <EventForm submitLabel="Save" onSubmit={handleSave} />
+      <Modal visible={quickAdd === 'event'} onClose={closeModal} title="Add Event">
+        <EventForm submitLabel="Save" onSubmit={handleAddEvent} />
+      </Modal>
+      <Modal visible={quickAdd === 'expense'} onClose={closeModal} title="Add Expense">
+        <TransactionForm submitLabel="Save" onSubmit={handleAddExpense} />
       </Modal>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
+  heading: { marginTop: spacing.md, marginBottom: spacing.md },
+  card: { marginBottom: spacing.md },
+  row: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    marginTop: spacing.sm,
   },
-  eventSection: {
-    marginTop: spacing.lg,
-    flex: 1,
+  actions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
+  action: { flex: 1 },
+  eventSection: { flex: 1 },
 });

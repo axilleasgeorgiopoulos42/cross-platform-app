@@ -38,7 +38,7 @@ export default function TransactionDetailScreen() {
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) router.back();
-    else router.replace('/');
+    else router.replace('/expenses');
   }, []);
 
   const finish = () => {

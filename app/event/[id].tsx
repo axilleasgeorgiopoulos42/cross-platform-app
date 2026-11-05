@@ -38,7 +38,7 @@ export default function EventDetailScreen() {
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) router.back();
-    else router.replace('/');
+    else router.replace('/calendar');
   }, []);
 
   const finish = () => {

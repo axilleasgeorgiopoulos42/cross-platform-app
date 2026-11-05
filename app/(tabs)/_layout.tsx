@@ -33,6 +33,15 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          title: 'Today',
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="sun" size={size} color={color as string} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
           title: 'Calendar',
           tabBarIcon: ({ color, size }) => (
             <Feather name="calendar" size={size} color={color as string} />
