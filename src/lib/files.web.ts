@@ -1,3 +1,9 @@
+import { settleOnce } from './settleOnce';
+
+// How long after the window regains focus we wait before treating an empty
+// file input as "cancelled" (gives onchange time to fire first).
+const FOCUS_CANCEL_DELAY_MS = 1000;
+
 export function downloadTextFile(name: string, text: string): void {
   if (typeof document === 'undefined') throw new Error('Not supported on this platform');
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
@@ -18,18 +24,39 @@ export function pickTextFile(): Promise<string | null> {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'application/json';
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onFocus = () => {
+      // Fallback for browsers without a reliable `cancel` event.
+      if (timer !== undefined) clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (!input.files || input.files.length === 0) session.resolve(null);
+      }, FOCUS_CANCEL_DELAY_MS);
+    };
+    const session = settleOnce<string | null>(resolve, reject, () => {
+      if (timer !== undefined) clearTimeout(timer);
+      window.removeEventListener('focus', onFocus);
+    });
+
     input.onchange = () => {
       const file = input.files?.[0];
       if (!file) {
-        resolve(null);
+        session.resolve(null);
         return;
       }
       const reader = new FileReader();
-      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
-      reader.onerror = () => reject(reader.error ?? new Error('Could not read file'));
+      reader.onload = () => {
+        if (typeof reader.result === 'string') session.resolve(reader.result);
+        else session.reject(new Error('Could not read file: unexpected content'));
+      };
+      reader.onerror = () =>
+        session.reject(
+          new Error(`Could not read file${reader.error ? `: ${reader.error.message}` : ''}`),
+        );
       reader.readAsText(file);
     };
-    input.oncancel = () => resolve(null);
+    input.oncancel = () => session.resolve(null);
+    window.addEventListener('focus', onFocus);
     input.click();
   });
 }
