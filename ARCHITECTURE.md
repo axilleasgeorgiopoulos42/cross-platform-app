@@ -14,9 +14,9 @@ Components never call services or `getDb()`; they read store state and call stor
 ## Folder map
 
 - `app/` Expo Router routes: `(tabs)/{index,calendar,expenses}.tsx`, `event/[id].tsx`, `transaction/[id].tsx`, `settings.tsx`, `_layout.tsx`.
-- `src/domains/{calendar,expenses,settings,backup}/` each with `types.ts`, `service.ts`, `store.ts` (expenses also has `summary.ts`, backup has `filename.ts`).
-- `src/components/` shared UI (Screen, Card, Button, forms, CalendarGrid, CategoryBreakdown, ...).
-- `src/lib/` pure helpers and platform adapters (`money`, `dates`, `time`, `swipe`, `settleOnce`, `submitGuard`, `storage`, `confirm`, `files`).
+- `src/domains/{calendar,expenses,settings,backup}/` each with `types.ts`, `service.ts`, `store.ts` (calendar and expenses also have a pure `search.ts`, expenses has `summary.ts`, backup has `filename.ts`).
+- `src/components/` shared UI (Screen, Card, Button, forms, CalendarGrid, CategoryBreakdown, `DateField`, `SearchBar`, `CategoryFilter`, ...).
+- `src/lib/` pure helpers and platform adapters (`money`, `dates`, `text`, `time`, `swipe`, `settleOnce`, `submitGuard`, `storage`, `confirm`, `files`).
 - `src/hooks/` `useTheme`, `useSwipe`.
 - `src/constants/` theme, categories, currencies, months.
 - `src/db/` `client.ts` (opens `cross-platform.db`), `migrations.ts`.
@@ -40,6 +40,13 @@ Dates are epoch milliseconds.
 - On web, expo-sqlite runs on wa-sqlite (WebAssembly). `metro.config.js` adds `wasm` to `assetExts` so the bundler serves it.
 - `vercel.json` sends `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: credentialless` (cross-origin isolation for the web SQLite build) and sets the build to `npx expo export --platform web` with output `dist`. A catch-all rewrite to `/index.html` serves the SPA for deep links and reloads (real files are served first).
 
+## Dates and search
+
+- `DateField` (`src/components/DateField.tsx`) is a labelled date control: a DOM `<input type="date">` on web and `@react-native-community/datetimepicker` on native. It reports a local-midnight timestamp (or `null` when cleared) and shows an optional error. `EventForm` and `TransactionForm` carry a required `date`; the Today and Calendar screens pass a default (Today screens use `dayStart` from `useTodayStart`); after saving a transaction the Expenses month view jumps to the saved date's month.
+- `SearchBar` (text input with search icon and clear button) and `CategoryFilter` (chip row, "All" plus each category) are presentational and stateless; the screens own the query/filter state.
+- Search is a pure-filter design. The domain `search.ts` modules (`searchEvents`, `filterTransactions`) take plain arrays and criteria and return new arrays; matching goes through `normalizeText`/`matchesQuery` in `src/lib/text.ts` (case-, accent- and Greek final-sigma-insensitive, plain substring, no regex so characters like `(` are safe). There is no SQL search.
+- Calendar search needs every event, not just the visible month: the store keeps `allEvents` (loaded by `loadAllForSearch()` via `calendarService.getAll`) and add/update/delete refresh it. Expenses already holds all transactions in `transactions`, so it filters those directly. `EventItem` takes `showDate` so search results show the date.
+
 ## Testing
 
-Unit tested: services, backup validation and restore, migrations, summary helpers and pure `src/lib` helpers. Service tests run against a real SQLite engine through the sql.js-backed adapter in `tests/helpers/testDb.ts`. Screens and components are verified manually only (no UI tests).
+Unit tested: services, backup validation and restore, migrations, summary helpers and pure `src/lib` helpers (including `dates` and `text`), and the pure search/filter modules. Service tests run against a real SQLite engine through the sql.js-backed adapter in `tests/helpers/testDb.ts`. Screens and components are verified manually only (no UI tests).

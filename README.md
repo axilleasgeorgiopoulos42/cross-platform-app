@@ -5,8 +5,8 @@ A local-only calendar and expense tracker built with Expo (SDK 58), React Native
 ## Screens
 
 - **Today** (tab): events for the current day.
-- **Calendar** (tab): month grid with events; swipe left/right to change month, "Jump to today" to return.
-- **Expenses** (tab): income and expense list with a month filter, balance summary and a category breakdown.
+- **Calendar** (tab): month grid with events; swipe left/right to change month, "Jump to today" to return, search across all events.
+- **Expenses** (tab): income and expense list with a month filter, balance summary, a category breakdown, and search with category and date-range filters.
 - **Event detail**: view, edit and delete an event (with notes).
 - **Transaction detail**: view, edit and delete a transaction.
 - **Settings**: currency, theme, JSON backup export/import (web only), clear all data.
@@ -19,6 +19,8 @@ A local-only calendar and expense tracker built with Expo (SDK 58), React Native
 - JSON backup export and import (web only), validated before anything is changed.
 - Clear all data (events and transactions; settings are kept).
 - Month filter and category breakdown on Expenses.
+- Choose the date when adding or editing an event or a transaction (so an item can be moved to another day or backdated). Web uses a native date input; iOS/Android use the platform date picker.
+- Search: the Calendar tab searches all events by title and notes; the Expenses tab searches notes and categories, with a category filter and a From/To date range. Matching ignores case, accents and Greek final sigma.
 
 ## Commands
 

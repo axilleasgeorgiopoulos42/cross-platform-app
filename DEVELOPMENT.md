@@ -47,4 +47,4 @@ Pushing `main` auto-deploys to Vercel (https://cross-platform-app-navy.vercel.ap
 
 ## Known limitations
 
-Backup UI is web-only. No recurring events, budgets, search, reminders or sync. Data is local to one browser or device.
+Backup UI is web-only. No recurring events, budgets, reminders or sync. Search covers events (title, notes) and transactions (note, category, date range) only. Data is local to one browser or device.
