@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Typography } from './Typography';
@@ -20,8 +20,17 @@ interface CategoryListProps {
 
 export function CategoryList({ groups, currency, onDelete }: CategoryListProps) {
   const { colors } = useTheme();
-  // Keyed by category: a vanished-then-reappearing group is simply absent/collapsed unless re-toggled.
+  // Keyed by category (not index); pruned below when a group disappears.
   const [expanded, setExpanded] = useState<Set<Category>>(() => new Set());
+
+  // Drop expansion for categories whose group vanished, so they reappear collapsed.
+  useEffect(() => {
+    setExpanded((prev) => {
+      const live = new Set(groups.map((g) => g.category));
+      const next = new Set([...prev].filter((c) => live.has(c)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [groups]);
 
   if (groups.length === 0) return null;
 
