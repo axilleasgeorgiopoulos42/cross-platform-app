@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 import { radius, spacing } from '../constants/theme';
+import { glass, themeTransition } from '../lib/glass';
 
 interface CardProps {
   children: ReactNode;
@@ -13,7 +14,9 @@ export function Card({ children, onPress, style }: CardProps) {
   const { colors } = useTheme();
   const cardStyle = [
     styles.card,
-    { backgroundColor: colors.surface, borderColor: colors.border },
+    glass(),
+    themeTransition(),
+    { backgroundColor: colors.card, borderColor: colors.border },
     style,
   ];
 
@@ -34,7 +37,7 @@ export function Card({ children, onPress, style }: CardProps) {
 const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
   },
   pressed: { opacity: 0.7 },

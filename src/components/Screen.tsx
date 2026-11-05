@@ -1,8 +1,9 @@
 import { type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../hooks/useTheme';
-import { spacing } from '../constants/theme';
+import { spacing, tabBarHeight } from '../constants/theme';
+import { themeTransition } from '../lib/glass';
 
 interface ScreenProps {
   children: ReactNode;
@@ -12,12 +13,14 @@ interface ScreenProps {
 
 export function Screen({ children, scroll = true, padded = true }: ScreenProps) {
   const { colors } = useTheme();
+  // The tab bar floats over content (frosted glass), so reserve its height.
+  const inset = tabBarHeight + useSafeAreaInsets().bottom;
   const content = (
-    <View style={[styles.inner, padded && styles.padded]}>{children}</View>
+    <View style={[styles.inner, padded && styles.padded, { paddingBottom: inset }]}>{children}</View>
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, themeTransition(), { backgroundColor: colors.background }]} edges={['top']}>
       {scroll ? (
         <ScrollView
           style={styles.scroll}

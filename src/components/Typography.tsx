@@ -10,7 +10,7 @@ interface TypographyProps extends TextProps {
 }
 
 const variantStyles: Record<TypoVariant, TextStyle> = {
-  h1: { fontSize: fontSizes.xxl, fontWeight: '700' },
+  h1: { fontSize: fontSizes.xxl, fontWeight: '600' },
   h2: { fontSize: fontSizes.xl, fontWeight: '600' },
   h3: { fontSize: fontSizes.lg, fontWeight: '600' },
   body: { fontSize: fontSizes.md, fontWeight: '400' },

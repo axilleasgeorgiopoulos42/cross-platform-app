@@ -1,6 +1,9 @@
 import { Pressable, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { tabBarHeight } from '../constants/theme';
 import { useTheme } from '../hooks/useTheme';
+import { glow, themeTransition } from '../lib/glass';
 
 interface FABProps {
   onPress: () => void;
@@ -9,6 +12,7 @@ interface FABProps {
 
 export function FAB({ onPress, disabled = false }: FABProps) {
   const { colors } = useTheme();
+  const bottom = 24 + tabBarHeight + useSafeAreaInsets().bottom;
 
   return (
     <Pressable
@@ -17,6 +21,9 @@ export function FAB({ onPress, disabled = false }: FABProps) {
       disabled={disabled}
       style={({ pressed }) => [
         styles.fab,
+        themeTransition(),
+        glow(colors.glow),
+        { bottom },
         { backgroundColor: colors.primary },
         (pressed || disabled) && styles.dimmed,
       ]}
@@ -36,11 +43,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
   },
   dimmed: { opacity: 0.5 },
 });

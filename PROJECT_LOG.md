@@ -39,6 +39,7 @@ Session B (this log's first session):
 13. "compact all the changes after every prompt into a file for future AI sessions, then continue with all the necessary fixing" -> this file; the fix pass for the six Important findings (four commits) and its re-review.
 14. (session resumed after context compaction; no new user text) -> ran the scoped re-review (clean), recorded it here, committed this log + AGENTS.md + docs/history, pushed the branch for a Vercel preview.
 15. "on the expenses the reload does not work" / "Still does the same" -> could not reproduce (preview routes 200, no headless browser available); asked for URL + symptom. "merge to main and lets see from there" -> merged `feat/v2-screens-features` into `main` (`d97730d`), pushed; production redeployed, `/expenses`, `/calendar`, `/settings` now return 200 on https://cross-platform-app-navy.vercel.app. Reload symptom still unconfirmed on the phone.
+16. Sage glass theme brief (palette, frosted cards/tab bar, accent glow, 12/20px radii, weights 400/600, 0.35s transitions) -> tokens in `src/constants/theme.ts` (+ `card`, `tabBar`, `glow`), helpers in `src/lib/glass.ts` (web-only backdrop blur/transition/glow), Card/Button/FAB/Modal/Screen/tab bar restyled; tab bar floats over content (Screen/FAB inset by `tabBarHeight`). Branch `feat/sage-theme`, preview only; native has translucent fill without blur.
 
 ## 4. Plan v2 execution record (branch `feat/v2-screens-features`, base `7ecfac1`)
 

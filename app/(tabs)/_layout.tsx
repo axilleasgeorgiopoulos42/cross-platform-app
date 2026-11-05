@@ -1,7 +1,9 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Tabs, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
+import { blur } from '../../src/constants/theme';
+import { glass, themeTransition } from '../../src/lib/glass';
 
 export default function TabLayout() {
   const { colors } = useTheme();
@@ -23,9 +25,23 @@ export default function TabLayout() {
           </Pressable>
         ),
         tabBarStyle: {
-          backgroundColor: colors.surface,
+          position: 'absolute',
+          backgroundColor: 'transparent',
           borderTopColor: colors.border,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          elevation: 0,
         },
+        tabBarBackground: () => (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              glass(blur.tabBar),
+              themeTransition(),
+              { backgroundColor: colors.tabBar },
+            ]}
+          />
+        ),
+        tabBarLabelStyle: { fontWeight: '600' },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
       }}
