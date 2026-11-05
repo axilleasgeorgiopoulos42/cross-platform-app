@@ -14,8 +14,8 @@ Components never call services or `getDb()`; they read store state and call stor
 ## Folder map
 
 - `app/` Expo Router routes: `(tabs)/{index,calendar,expenses}.tsx`, `event/[id].tsx`, `transaction/[id].tsx`, `settings.tsx`, `_layout.tsx`.
-- `src/domains/{calendar,expenses,settings,backup}/` each with `types.ts`, `service.ts`, `store.ts` (calendar and expenses also have a pure `search.ts`, expenses has `summary.ts`, backup has `filename.ts`).
-- `src/components/` shared UI (Screen, Card, Button, forms, CalendarGrid, CategoryBreakdown, `DateField`, `SearchBar`, `CategoryFilter`, ...).
+- `src/domains/{calendar,expenses,settings,backup}/` each with `types.ts`, `service.ts`, `store.ts` (calendar and expenses also have a pure `search.ts`, expenses has `summary.ts`, `range.ts` and `chart.ts`, backup has `filename.ts`).
+- `src/components/` shared UI (Screen, Card, Button, forms, CalendarGrid, `DateField`, `SearchBar`, `CategoryFilter`, `RangePicker`, `SpendChart`, `CategoryList`, ...).
 - `src/lib/` pure helpers and platform adapters (`money`, `dates`, `text`, `time`, `swipe`, `settleOnce`, `submitGuard`, `storage`, `confirm`, `files`).
 - `src/hooks/` `useTheme`, `useSwipe`.
 - `src/constants/` theme, categories, currencies, months.
@@ -47,6 +47,13 @@ Dates are epoch milliseconds.
 - Search is a pure-filter design. The domain `search.ts` modules (`searchEvents`, `filterTransactions`) take plain arrays and criteria and return new arrays; matching goes through `normalizeText`/`matchesQuery` in `src/lib/text.ts` (case-, accent- and Greek final-sigma-insensitive, plain substring, no regex so characters like `(` are safe). There is no SQL search.
 - Calendar search needs every event, not just the visible month: the store keeps `allEvents` (loaded by `loadAllForSearch()` via `calendarService.getAll`) and add/update/delete refresh it. Expenses already holds all transactions in `transactions`, so it filters those directly. `EventItem` takes `showDate` so search results show the date.
 
+## Expenses range, chart and categories
+
+- `src/domains/expenses/range.ts` is the pure range model: `DateRange { preset, from, to }` with presets `week` (Monday start), `month`, `3months`, `year` and `custom`; helpers build, step (`shiftRange`), validate and label a range. The Expenses screen holds the range in local state (default: the current month) and passes it to the existing `filterTransactions` as `from`/`to`, merged with the search query and category filter. So chart, summary and category list all read the same filtered array; no new store state or SQL.
+- `src/domains/expenses/chart.ts` buckets expenses for the chart: day buckets up to 31 days, week buckets up to 183 days, month buckets beyond that (`bucketGranularity`, `bucketExpenses`), plus pure helpers for label thinning (`visibleLabelIndexes`) and bar sizing (`barHeight`).
+- `groupByCategory` in `summary.ts` groups expenses per category with their entries (newest first) for the list. `calendarDayCount` in `src/lib/dates.ts` (DST-safe inclusive day count) is shared by `range.ts` and `chart.ts`.
+- Components: `RangePicker` (preset chips, stepper, custom From/To with local drafts so an invalid pair never reaches the screen), `SpendChart` (View-based bars, tap to select), `CategoryList` (expandable rows; entries reuse `TransactionItem`; row text from the pure `categoryRowLabel`). `MonthSwitcher` and `filterByMonth` are kept but the screen no longer uses them.
+
 ## Testing
 
-Unit tested: services, backup validation and restore, migrations, summary helpers and pure `src/lib` helpers (including `dates` and `text`), and the pure search/filter modules. Service tests run against a real SQLite engine through the sql.js-backed adapter in `tests/helpers/testDb.ts`. Screens and components are verified manually only (no UI tests).
+Unit tested: services, backup validation and restore, migrations, summary helpers and pure `src/lib` helpers (including `dates` and `text`), and the pure search/filter modules, and the range and chart modules. Service tests run against a real SQLite engine through the sql.js-backed adapter in `tests/helpers/testDb.ts`. Screens and components are verified manually only (no UI tests).

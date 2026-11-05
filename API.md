@@ -62,6 +62,38 @@ summarize(txs: Transaction[]): BalanceSummary
 categoryBreakdown(txs: Transaction[]): CategoryShare[]   // { category, total, share }; expenses only, sorted desc; [] if none
 ```
 
+`groupByCategory(txs: Transaction[]): CategoryGroup[]` returns one group per category with expenses, sorted by total descending; income is ignored and `[]` is returned when there are no expenses.
+
+```ts
+CategoryGroup { category: Category; total: number; share: number; entries: Transaction[] }   // share = total / all expenses; entries newest first
+```
+
+## Expense range (`src/domains/expenses/range.ts`)
+
+```ts
+type RangePreset = 'week' | 'month' | '3months' | 'year' | 'custom'
+DateRange { preset: RangePreset; from: number; to: number }   // from = local start of first day, to = last ms of last day
+rangeFor(preset: Exclude<RangePreset, 'custom'>, anchor: number): DateRange   // week starts Monday; 3months = anchor month and the two before; year = calendar year
+defaultRange(now = Date.now()): DateRange          // the month containing now
+customRange(from: number, to: number): DateRange   // from -> start of day, to -> end of day
+shiftRange(range: DateRange, delta: 1 | -1): DateRange   // custom shifts by its own day count
+validateRange(from: number | null, to: number | null): string | null   // error message, or null if valid
+rangeLabel(range: DateRange): string               // e.g. 'November 2026', '2026', '1 Nov – 7 Nov 2026'
+inRange(range: DateRange, ts: number): boolean
+```
+
+## Expense chart (`src/domains/expenses/chart.ts`)
+
+```ts
+Bucket { label: string; start: number; end: number; total: number }   // start/end inclusive ms
+bucketGranularity(range: DateRange): 'day' | 'week' | 'month'   // <=31 days day, <=183 week, else month
+bucketExpenses(txs: Transaction[], range: DateRange): Bucket[]   // contiguous buckets covering the range; expenses only, empty buckets total 0
+visibleLabelIndexes(count: number, max = 6): number[]            // at most max evenly spread axis label indexes, always including 0
+barHeight(total: number, max: number, plotHeight: number): number   // proportional, clamped to [0, plotHeight]; 0 if max or total is not positive
+```
+
+The Expenses screen applies the range with `filterTransactions(txs, { ...filter, from: range.from, to: range.to })`.
+
 ## formatMoney (`src/lib/money.ts`)
 
 ```ts
@@ -98,6 +130,7 @@ endOfDay(ts): number                                  // last millisecond of the
 toDateInputValue(ts): string                          // local 'YYYY-MM-DD'
 fromDateInputValue(s: string): number | null          // local midnight; null if malformed or not a real date
 monthOf(ts): { year: number; month: number }          // local year and month (0-11)
+calendarDayCount(from: number, to: number): number    // local calendar days from..to inclusive (DST-safe)
 ```
 
 ## Form values

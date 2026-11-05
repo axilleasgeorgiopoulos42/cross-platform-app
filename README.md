@@ -6,7 +6,7 @@ A local-only calendar and expense tracker built with Expo (SDK 58), React Native
 
 - **Today** (tab): events for the current day.
 - **Calendar** (tab): month grid with events; swipe left/right to change month, "Jump to today" to return, search across all events.
-- **Expenses** (tab): income and expense list with a month filter, balance summary, a category breakdown, and search with category and date-range filters.
+- **Expenses** (tab): a range picker (Week, Month, 3 Months, Year, Custom; defaults to the current month) with a previous/next stepper, a balance summary, a bar chart of spending (daily bars for up to 31 days, weekly or monthly bars for longer ranges; tap a bar to see its amount), an expandable per-category list (tap a category arrow to see, edit and delete its entries), and search with a category filter that narrows the chart and list together.
 - **Event detail**: view, edit and delete an event (with notes).
 - **Transaction detail**: view, edit and delete a transaction.
 - **Settings**: currency, theme, JSON backup export/import (web only), clear all data.
@@ -18,9 +18,9 @@ A local-only calendar and expense tracker built with Expo (SDK 58), React Native
 - Theme override: system, light or dark.
 - JSON backup export and import (web only), validated before anything is changed.
 - Clear all data (events and transactions; settings are kept).
-- Month filter and category breakdown on Expenses.
+- Range presets, spend chart and expandable category list on Expenses.
 - Choose the date when adding or editing an event or a transaction (so an item can be moved to another day or backdated). Web uses a native date input; iOS/Android use the platform date picker.
-- Search: the Calendar tab searches all events by title and notes; the Expenses tab searches notes and categories, with a category filter and a From/To date range. Matching ignores case, accents and Greek final sigma.
+- Search: the Calendar tab searches all events by title and notes; the Expenses tab searches notes and categories, with a category filter, and its date range comes from the range picker (Custom takes From/To dates). Matching ignores case, accents and Greek final sigma.
 
 ## Commands
 
