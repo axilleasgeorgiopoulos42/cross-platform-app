@@ -13,6 +13,7 @@ export { EventItem } from './EventItem';
 export { FAB } from './FAB';
 export { Modal } from './Modal';
 export { MonthSwitcher } from './MonthSwitcher';
+export { RangePicker } from './RangePicker';
 export { Screen } from './Screen';
 export { SearchBar } from './SearchBar';
 export { TransactionForm } from './TransactionForm';
