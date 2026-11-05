@@ -35,7 +35,7 @@ Income charts, cumulative line, new dependencies, schema changes, recurring item
   - `shiftRange(range, delta)` -> previous/next period of the same preset; for `custom`, shifts by the range's length in days.
   - `validateRange(from, to)` -> error string when `from > to`, else null. The UI shows it inline instead of returning zero results silently.
 - `src/domains/expenses/chart.ts`
-  - `bucketExpenses(txs, range)` -> `{ label, start, end, total }[]`. Granularity: day when the range spans <= 31 days, week when <= 183 days, month otherwise. Counts expenses only, includes empty buckets (total 0), and clamps first/last buckets to the range.
+  - `bucketExpenses(txs, range)` -> `{ label, start, end, total }[]`. Granularity: day when the range spans <= 31 days, week when <= 183 days, month when <= 1100 days, year otherwise (label = 4-digit year; keeps bucket counts bounded; `validateRange` also rejects dates before 1900). Counts expenses only, includes empty buckets (total 0), and clamps first/last buckets to the range.
 - `src/domains/expenses/summary.ts`
   - Add `groupByCategory(txs)` -> `{ category, total, share, entries }[]`, sorted by total descending, entries newest first. `categoryBreakdown` stays.
 - Store: holds the current `DateRange`; filtering uses `filterTransactions` (existing query/category filter) plus the range. The same filtered set feeds the total, the chart and the category list.
@@ -47,7 +47,7 @@ Income charts, cumulative line, new dependencies, schema changes, recurring item
 3. `SpendChart`: bars, max-value label, a few x-axis labels, tap a bar to show that bucket's amount. Accessible label per bar.
 4. `SearchBar` and `CategoryFilter` (existing).
 5. `CategoryList` replaces `CategoryBreakdown`: icon, name, total, share bar, chevron (44pt hit area). Tapping expands to that category's entries rendered with `TransactionItem` (tap to edit, delete as today). Several rows can be open at once; expansion state is local to the screen.
-6. Empty state: "No expenses in this range".
+6. Empty state: "No expenses in this range", shown only when the range has neither expenses nor income. Income (not in the spec originally; added after final review) appears as an expandable "Income" row below the categories, only when the range has income, listing entries via `TransactionItem`.
 
 New components: `RangePicker`, `SpendChart`, `CategoryList` (in `src/components/`, exported from the index). `CategoryBreakdown` and `MonthSwitcher` are removed if nothing else uses them.
 

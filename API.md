@@ -59,6 +59,7 @@ clearAllData(db): Promise<void>                                                 
 ```ts
 filterByMonth(txs: Transaction[], year: number, month: number): Transaction[]
 summarize(txs: Transaction[]): BalanceSummary
+incomeEntries(txs: Transaction[]): { entries: Transaction[]; total: number }   // income only, newest first, with their total
 categoryBreakdown(txs: Transaction[]): CategoryShare[]   // { category, total, share }; expenses only, sorted desc; [] if none
 ```
 
@@ -77,8 +78,8 @@ rangeFor(preset: Exclude<RangePreset, 'custom'>, anchor: number): DateRange   //
 defaultRange(now = Date.now()): DateRange          // the month containing now
 customRange(from: number, to: number): DateRange   // from -> start of day, to -> end of day
 shiftRange(range: DateRange, delta: 1 | -1): DateRange   // custom shifts by its own day count
-validateRange(from: number | null, to: number | null): string | null   // error message, or null if valid
-rangeLabel(range: DateRange): string               // e.g. 'November 2026', '2026', '1 Nov – 7 Nov 2026'
+validateRange(from: number | null, to: number | null): string | null   // error message, or null if valid; rejects null, from > to, and any date before year 1900 (MIN_RANGE_YEAR)
+rangeLabel(range: DateRange): string               // e.g. 'November 2026', '2026', '2 November – 8 November 2026'
 inRange(range: DateRange, ts: number): boolean
 ```
 
@@ -86,8 +87,8 @@ inRange(range: DateRange, ts: number): boolean
 
 ```ts
 Bucket { label: string; start: number; end: number; total: number }   // start/end inclusive ms
-bucketGranularity(range: DateRange): 'day' | 'week' | 'month'   // <=31 days day, <=183 week, else month
-bucketExpenses(txs: Transaction[], range: DateRange): Bucket[]   // contiguous buckets covering the range; expenses only, empty buckets total 0
+bucketGranularity(range: DateRange): 'day' | 'week' | 'month' | 'year'   // <=31 days day, <=183 week, <=1100 month, else year (label = 4-digit year)
+bucketExpenses(txs: Transaction[], range: DateRange): Bucket[]   // contiguous buckets covering the range; expenses only, empty buckets total 0; first/last buckets clamped to the range
 visibleLabelIndexes(count: number, max = 6): number[]            // at most max evenly spread axis label indexes, always including 0
 barHeight(total: number, max: number, plotHeight: number): number   // proportional, clamped to [0, plotHeight]; 0 if max or total is not positive
 ```
