@@ -44,6 +44,7 @@ Session B (this log's first session):
 17. "merge it" -> merged `feat/sage-theme` into `main` and pushed; production redeploys.
 18. Dates and search (sub-project 1; spec/plan commits `0bf6e0c`, `9859531`) -> built on branch `feat/dates-and-search` with subagent-driven development: date helpers `a1ed29f`; event search, text matching and all-events loading `d609e81` + fix `cb5152a` (Greek final sigma, store/sort tests); transaction filter `a09924c`; `DateField`/`SearchBar`/`CategoryFilter` `f70624a`; date field on the event form `b7ad2d1` and expense form `9069d84`; calendar search `0d64729`; expenses search and filters `c008309`; docs (Task 9, the last commit on the branch). Rulings: search is accent- and Greek-final-sigma-insensitive; spec requirement R4 was stale, so no store signature change (`addEvent` unchanged); Today screens use `dayStart` from `useTodayStart` for default dates because `Date.now()` in render fails react-hooks/purity; push held back until the final review. Deferred minors are in section 6. Not pushed or merged yet.
 19. "Prossed" (proceed) -> final self-review of `feat/dates-and-search` (jest 116 pass, tsc + lint clean, no blocking findings); pushed the branch for a Vercel preview. `main` untouched; section 7 manual checks are the user's.
+20. "merge it" -> merged `feat/dates-and-search` into `main` (`d02278b`), pushed; production redeploys. Manual checks were not confirmed by the user before merge.
 
 ## 4. Plan v2 execution record (branch `feat/v2-screens-features`, base `7ecfac1`)
 
