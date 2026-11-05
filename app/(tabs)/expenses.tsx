@@ -162,7 +162,7 @@ export default function ExpensesScreen() {
         <Button
           title="Save"
           onPress={handleSave}
-          disabled={!amount || parseFloat(amount) <= 0}
+          disabled={!amount.trim() || parseFloat(amount) <= 0 || isNaN(parseFloat(amount))}
           style={styles.saveBtn}
         />
       </Modal>

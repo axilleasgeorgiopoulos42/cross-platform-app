@@ -51,8 +51,9 @@ export default function CalendarScreen() {
 
   const selectedEvents = useMemo(() => {
     if (selectedDate == null) return [];
+    const d = new Date(selectedDate);
     const dayStart = selectedDate;
-    const dayEnd = dayStart + 86400000 - 1;
+    const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() - 1;
     return events.filter((e) => e.date >= dayStart && e.date <= dayEnd);
   }, [events, selectedDate]);
 
