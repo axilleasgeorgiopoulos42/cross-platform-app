@@ -2,7 +2,11 @@ import { settleOnce } from './settleOnce';
 
 // How long after the window regains focus we wait before treating an empty
 // file input as "cancelled" (gives onchange time to fire first).
-const FOCUS_CANCEL_DELAY_MS = 1000;
+// Only used when the input has no `cancel` event. Long enough for a slow
+// iCloud download to deliver `change` first.
+const FOCUS_CANCEL_DELAY_MS = 3000;
+// WebKit can fail blob downloads whose URL is revoked too early.
+const REVOKE_DELAY_MS = 60_000;
 
 export function downloadTextFile(name: string, text: string): void {
   if (typeof document === 'undefined') throw new Error('Not supported on this platform');
@@ -13,7 +17,7 @@ export function downloadTextFile(name: string, text: string): void {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS);
 }
 
 export function pickTextFile(): Promise<string | null> {
@@ -23,7 +27,8 @@ export function pickTextFile(): Promise<string | null> {
   return new Promise((resolve, reject) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'application/json';
+    input.accept = '.json,application/json';
+    input.style.display = 'none';
 
     let timer: ReturnType<typeof setTimeout> | undefined;
     const onFocus = () => {
@@ -36,6 +41,7 @@ export function pickTextFile(): Promise<string | null> {
     const session = settleOnce<string | null>(resolve, reject, () => {
       if (timer !== undefined) clearTimeout(timer);
       window.removeEventListener('focus', onFocus);
+      input.remove();
     });
 
     input.onchange = () => {
@@ -56,7 +62,11 @@ export function pickTextFile(): Promise<string | null> {
       reader.readAsText(file);
     };
     input.oncancel = () => session.resolve(null);
-    window.addEventListener('focus', onFocus);
+    // Browsers with a `cancel` event report cancellation reliably; only the
+    // others need the focus heuristic.
+    if (!('oncancel' in input)) window.addEventListener('focus', onFocus);
+    // Attached to the DOM: older iOS Safari drops `change` from detached inputs.
+    document.body.appendChild(input);
     input.click();
   });
 }

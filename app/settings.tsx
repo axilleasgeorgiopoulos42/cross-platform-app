@@ -91,7 +91,7 @@ export default function SettingsScreen() {
     if (!result) return;
     try {
       downloadTextFile(result.filename, result.json);
-      setInfo(`Exported ${result.filename}`);
+      setInfo(`Backup file created: ${result.filename}. Check that it was saved to your Files.`);
     } catch (e) {
       setFileError((e as Error).message);
     }
