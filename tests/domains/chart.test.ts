@@ -66,6 +66,7 @@ describe('bucketExpenses daily', () => {
   test('empty list and income only give zero totals, no NaN', () => {
     for (const list of [[], [tx(day(2026, 10, 2), 50, 'income')]]) {
       const b = bucketExpenses(list, nov);
+      expect(b).toHaveLength(30);
       expect(b.every((x) => x.total === 0)).toBe(true);
     }
   });

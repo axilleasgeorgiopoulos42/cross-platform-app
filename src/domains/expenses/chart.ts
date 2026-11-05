@@ -1,4 +1,5 @@
 import { MONTH_NAMES } from '../../constants/months';
+import { calendarDayCount } from '../../lib/dates';
 import type { DateRange } from './range';
 import type { Transaction } from './types';
 
@@ -13,17 +14,8 @@ export interface Bucket {
 
 type Granularity = 'day' | 'week' | 'month';
 
-/** Calendar days from `from` to `to` inclusive (DST-safe). */
-function calendarDays(from: number, to: number): number {
-  const a = new Date(from);
-  const b = new Date(to);
-  const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-  const ub = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-  return Math.round((ub - ua) / 86400000) + 1;
-}
-
 export function bucketGranularity(range: DateRange): Granularity {
-  const days = calendarDays(range.from, range.to);
+  const days = calendarDayCount(range.from, range.to);
   if (days <= 31) return 'day';
   if (days <= 183) return 'week';
   return 'month';

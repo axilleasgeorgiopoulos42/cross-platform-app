@@ -1,5 +1,5 @@
 import { MONTH_NAMES } from '../../constants/months';
-import { endOfDay, startOfDay } from '../../lib/dates';
+import { calendarDayCount, endOfDay, startOfDay } from '../../lib/dates';
 
 export type RangePreset = 'week' | 'month' | '3months' | 'year' | 'custom';
 
@@ -32,15 +32,6 @@ function weekFrom(startTs: number): DateRange {
     from: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(),
     to: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7).getTime() - 1,
   };
-}
-
-/** Number of calendar days from `from` to `to` inclusive (DST-safe). */
-function dayCount(from: number, to: number): number {
-  const a = new Date(from);
-  const b = new Date(to);
-  const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-  const ub = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-  return Math.round((ub - ua) / 86400000) + 1;
 }
 
 export function rangeFor(
@@ -86,7 +77,7 @@ export function shiftRange(range: DateRange, delta: 1 | -1): DateRange {
     case 'year':
       return monthSpan('year', y + delta, 0, 12);
     case 'custom': {
-      const n = dayCount(range.from, range.to);
+      const n = calendarDayCount(range.from, range.to);
       const nf = new Date(y, m, f.getDate() + n * delta).getTime();
       const nt = new Date(y, m, f.getDate() + n * delta + n).getTime() - 1;
       return { preset: 'custom', from: nf, to: nt };
