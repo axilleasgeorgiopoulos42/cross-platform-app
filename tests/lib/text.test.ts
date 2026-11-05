@@ -5,6 +5,12 @@ describe('text', () => {
     expect(normalizeText('Καφές')).toBe(normalizeText('καφες'));
   });
 
+  it('folds the Greek final sigma', () => {
+    expect(normalizeText('ΣΑΣ')).toBe(normalizeText('σασ'));
+    expect(matchesQuery(['Καφές'], 'καφεσ')).toBe(true);
+    expect(matchesQuery(['Μαστόρας'], 'ΜΑΣ')).toBe(true);
+  });
+
   it('matchesQuery matches case-insensitive substrings', () => {
     expect(matchesQuery(['Coffee beans'], 'FEE')).toBe(true);
   });

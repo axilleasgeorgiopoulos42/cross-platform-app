@@ -38,6 +38,13 @@ describe('searchEvents', () => {
     ]);
   });
 
+  it('orders same-date timed events with the all-day one first, from reversed input', () => {
+    const t2 = ev({ id: 't2', title: 'm', date: 5, time: '14:00' });
+    const t1 = ev({ id: 't1', title: 'm', date: 5, time: '09:00' });
+    const ad = ev({ id: 'ad', title: 'm', date: 5, time: null });
+    expect(searchEvents([t2, t1, ad], 'm').map((e) => e.id)).toEqual(['ad', 't1', 't2']);
+  });
+
   it('matches a Greek title with an accent-less query', () => {
     const e = ev({ title: 'Καφές με φίλους' });
     expect(searchEvents([e], 'καφες')).toHaveLength(1);
@@ -65,6 +72,12 @@ describe('calendar store: allEvents', () => {
     await calendarService.create(db, { title: 'July', date: new Date(2020, 6, 10).getTime(), time: null });
     await useCalendarStore.getState().loadAllForSearch();
     expect(useCalendarStore.getState().allEvents.map((e) => e.title)).toEqual(['March', 'July']);
+  });
+
+  it('loadAllForSearch sets error and does not throw when getDb rejects', async () => {
+    (getDb as jest.Mock).mockRejectedValueOnce(new Error('db down'));
+    await expect(useCalendarStore.getState().loadAllForSearch()).resolves.toBeUndefined();
+    expect(useCalendarStore.getState().error).toBe('db down');
   });
 
   it('updateEvent and deleteEvent keep allEvents fresh outside the current month', async () => {

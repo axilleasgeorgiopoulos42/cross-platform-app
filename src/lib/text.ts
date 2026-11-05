@@ -3,6 +3,7 @@ export function normalizeText(s: string): string {
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
+    .replace(/ς/g, 'σ')
     .trim();
 }
 
