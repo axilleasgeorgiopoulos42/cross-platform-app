@@ -102,6 +102,39 @@ describe('buildServiceWorker', () => {
     expect(h.store.has('planner-v0')).toBe(true);
   });
 
+  it('failed install removes its partial cache and keeps older generations', async () => {
+    const h = setup();
+    h.seed('planner-v0', { '/index.html': res('old') });
+    h.fetchFn.mockImplementation(async (k: any) =>
+      norm(k).endsWith('/app.js') ? ({ ok: false, status: 500 } as any) : res('x'),
+    );
+    await expect(h.fire('install').waited).rejects.toBeDefined();
+    expect(h.store.has('planner-v1')).toBe(false);
+    expect(h.store.has('planner-v0')).toBe(true);
+    expect(h.self.skipWaiting).not.toHaveBeenCalled();
+  });
+
+  it('after a failed v1 install, v2 keeps v0 as the previous generation', async () => {
+    const h1 = setup(['/index.html', '/app.js'], 'v1');
+    h1.seed('planner-v0', { '/index.html': res('old') });
+    h1.fetchFn.mockImplementation(async () => ({ ok: false, status: 500 }) as any);
+    await expect(h1.fire('install').waited).rejects.toBeDefined();
+    // Same cache storage, new worker version.
+    const h2 = setup(['/index.html', '/app.js'], 'v2');
+    for (const [k, v] of h1.store) h2.store.set(k, v);
+    await h2.fire('install').waited;
+    await h2.fire('activate').waited;
+    expect([...h2.store.keys()]).toEqual(['planner-v0', 'planner-v2']);
+  });
+
+  it('failed reinstall of the same version does not delete the existing cache', async () => {
+    const h = setup();
+    h.seed('planner-v1', { '/index.html': res('live') });
+    h.fetchFn.mockImplementation(async () => ({ ok: false, status: 500 }) as any);
+    await expect(h.fire('install').waited).rejects.toBeDefined();
+    expect(h.store.has('planner-v1')).toBe(true);
+  });
+
   it('activate keeps current and previous generation', async () => {
     const h = setup(['/index.html'], 'c');
     h.seed('planner-a', {});

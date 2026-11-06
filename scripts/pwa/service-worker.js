@@ -17,9 +17,10 @@ function openCurrent() {
 
 self.addEventListener('install', function (event) {
   event.waitUntil(
-    openCurrent()
-      .then(function (cache) {
-        return Promise.all(
+    caches.keys().then(function (names) {
+      var existedBefore = names.indexOf(CACHE_NAME) !== -1;
+      return openCurrent().then(function (cache) {
+        return Promise.allSettled(
           URLS.map(function (url) {
             return fetch(url, { cache: 'reload' }).then(function (response) {
               if (!response || !response.ok) {
@@ -28,11 +29,21 @@ self.addEventListener('install', function (event) {
               return cache.put(url, response);
             });
           })
-        );
-      })
-      .then(function () {
-        self.skipWaiting();
-      })
+        ).then(function (results) {
+          var failed = results.filter(function (r) {
+            return r.status === 'rejected';
+          })[0];
+          if (!failed) {
+            self.skipWaiting();
+            return;
+          }
+          var cleanup = existedBefore ? Promise.resolve() : caches.delete(CACHE_NAME);
+          return cleanup.then(function () {
+            throw failed.reason;
+          });
+        });
+      });
+    })
   );
 });
 
