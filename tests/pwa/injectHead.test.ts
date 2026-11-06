@@ -38,4 +38,34 @@ describe('injectHead', () => {
   it('throws an error mentioning <head> when there is no head tag', () => {
     expect(() => injectHead('<html><body></body></html>', colors)).toThrow(/<head>/);
   });
+  describe('viewport-fit=cover (draw under the iPhone home indicator)', () => {
+    const viewport = '<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />';
+    const withViewport = html.replace('<head>', `<head>${viewport}`);
+
+    it('adds viewport-fit=cover to the existing viewport meta', () => {
+      const out: string = injectHead(withViewport, colors);
+      expect(count(out, 'name="viewport"')).toBe(1);
+      expect(out).toContain('content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"');
+    });
+
+    it('replaces a different viewport-fit value instead of adding a second one', () => {
+      const contain = withViewport.replace('shrink-to-fit=no', 'viewport-fit=contain');
+      const out: string = injectHead(contain, colors);
+      expect(count(out, 'viewport-fit')).toBe(1);
+      expect(out).toContain('viewport-fit=cover');
+    });
+
+    it('adds a viewport meta with viewport-fit=cover when the page has none', () => {
+      const out: string = injectHead(html, colors);
+      expect(count(out, 'name="viewport"')).toBe(1);
+      expect(out).toContain('viewport-fit=cover');
+    });
+
+    it('is idempotent and also heals an index.html that already has the install tags', () => {
+      const once: string = injectHead(withViewport, colors);
+      expect(injectHead(once, colors)).toBe(once);
+      const installedWithoutCover = once.replace(', viewport-fit=cover', '');
+      expect(injectHead(installedWithoutCover, colors)).toContain('viewport-fit=cover');
+    });
+  });
 });
