@@ -11,6 +11,12 @@ var PREFIX = 'planner-';
 var CACHE_NAME = ${JSON.stringify('planner-' + version)};
 var URLS = ${JSON.stringify(urls)};
 
+function isHtml(response) {
+  var h = response && response.headers;
+  var ct = h && typeof h.get === 'function' ? h.get('content-type') : null;
+  return !!ct && ct.toLowerCase().indexOf('text/html') !== -1;
+}
+
 function openCurrent() {
   return caches.open(CACHE_NAME);
 }
@@ -25,6 +31,10 @@ self.addEventListener('install', function (event) {
             return fetch(url, { cache: 'reload' }).then(function (response) {
               if (!response || !response.ok) {
                 throw new Error('Precache failed for ' + url);
+              }
+              var expectsHtml = url === '/' || /\\.html$/.test(url);
+              if (!expectsHtml && isHtml(response)) {
+                throw new Error('Precache got HTML instead of an asset for ' + url);
               }
               return cache.put(url, response);
             });
@@ -99,7 +109,7 @@ self.addEventListener('fetch', function (event) {
           return caches.match(request).then(function (any) {
             if (any) return any;
             return fetch(request).then(function (response) {
-              if (response && response.status === 200 && response.type === 'basic') {
+              if (response && response.status === 200 && response.type === 'basic' && !isHtml(response)) {
                 var copy = response.clone();
                 cache.put(request, copy);
               }

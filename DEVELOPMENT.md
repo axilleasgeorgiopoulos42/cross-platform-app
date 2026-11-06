@@ -47,6 +47,12 @@ Create a file under `app/` (Expo Router; `[id].tsx` for dynamic routes) and regi
 - Regenerate icons only when the artwork changes: `node scripts/generate-icons.js` (needs the `@resvg/resvg-js` devDependency), then commit the PNGs in `public/icons/` and the replaced `assets/` images.
 - Tests for the pure PWA modules are in `tests/pwa/` (run with `npx jest tests/pwa`). The worker is checked against a fake `self`/`caches` harness; real browser behaviour is checked by hand (PROJECT_LOG section 7).
 
+## Recovering from a bad deploy
+
+- Fix the problem and redeploy. Installed apps pick up the fixed worker on their next online launch, sometimes only on the second launch.
+- Optional kill switch: deploy a `sw.js` that deletes every `planner-*` cache and calls `self.registration.unregister()` (for example `self.addEventListener('install', () => self.skipWaiting()); self.addEventListener('activate', (e) => e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith('planner-')).map((k) => caches.delete(k)))).then(() => self.registration.unregister())));`). Remove it again once the app has recovered.
+- Users must NOT clear website data or delete the home-screen app to recover: that deletes their local SQLite data. If they must, export a backup from Settings first.
+
 ## Commit and deploy
 
 Pushing `main` auto-deploys to Vercel (https://cross-platform-app-navy.vercel.app). Other branches get preview deployments. Before pushing run jest, `tsc --noEmit`, `expo lint` and `expo export --platform web`.

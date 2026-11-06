@@ -4,9 +4,25 @@ const { buildServiceWorker } = require('../../scripts/pwa/service-worker');
 const ORIGIN = 'https://app.test';
 const norm = (k: any) => new URL(typeof k === 'string' ? k : k.url, ORIGIN).href;
 
-type Res = { ok: boolean; status: number; type: string; body: string; clone: () => Res };
-function res(body: string, o: Partial<Res> = {}): Res {
-  const r: Res = { ok: true, status: 200, type: 'basic', body, clone: () => r, ...o };
+type Res = {
+  ok: boolean;
+  status: number;
+  type: string;
+  body: string;
+  headers: { get: (name: string) => string | null };
+  clone: () => Res;
+};
+function res(body: string, o: Partial<Res> & { contentType?: string } = {}): Res {
+  const { contentType = 'application/javascript', ...rest } = o;
+  const r: Res = {
+    ok: true,
+    status: 200,
+    type: 'basic',
+    body,
+    headers: { get: (n: string) => (n.toLowerCase() === 'content-type' ? contentType : null) },
+    clone: () => r,
+    ...rest,
+  };
   return r;
 }
 
@@ -204,6 +220,52 @@ describe('buildServiceWorker', () => {
     expect(r.body).toBe('net:' + ORIGIN + '/new.js');
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(h.cacheOf('planner-v1')!.get(ORIGIN + '/new.js')).toBe(r);
+  });
+
+  it('install rejects when a non-html url returns 200 text/html (SPA rewrite)', async () => {
+    const h = setup();
+    h.seed('planner-v0', { '/index.html': res('old') });
+    h.fetchFn.mockImplementation(async (k: any) =>
+      norm(k).endsWith('/app.js')
+        ? res('<html>', { contentType: 'text/html; charset=utf-8' })
+        : res('x'),
+    );
+    await expect(h.fire('install').waited).rejects.toThrow('/app.js');
+    expect(h.self.skipWaiting).not.toHaveBeenCalled();
+    expect(h.store.has('planner-v1')).toBe(false);
+    expect(h.store.has('planner-v0')).toBe(true);
+  });
+
+  it('install succeeds when /index.html itself is text/html', async () => {
+    const h = setup();
+    h.fetchFn.mockImplementation(async (k: any) =>
+      norm(k).endsWith('/index.html')
+        ? res('<html>', { contentType: 'text/html; charset=utf-8' })
+        : res('x'),
+    );
+    await h.fire('install').waited;
+    expect(h.self.skipWaiting).toHaveBeenCalledTimes(1);
+    expect(h.cacheOf('planner-v1')!.size).toBe(2);
+  });
+
+  it('runtime text/html response for an asset is returned but not cached', async () => {
+    const h = setup();
+    h.seed('planner-v1', {});
+    const html = res('<html>', { contentType: 'text/html' });
+    h.fetchFn.mockResolvedValueOnce(html);
+    expect(await h.fire('fetch', asset('/gone.js')).responded).toBe(html);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(h.cacheOf('planner-v1')!.size).toBe(0);
+  });
+
+  it('runtime javascript asset is still cached', async () => {
+    const h = setup();
+    h.seed('planner-v1', {});
+    const js = res('js', { contentType: 'application/javascript' });
+    h.fetchFn.mockResolvedValueOnce(js);
+    expect(await h.fire('fetch', asset('/ok.js')).responded).toBe(js);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(h.cacheOf('planner-v1')!.get(ORIGIN + '/ok.js')).toBe(js);
   });
 
   it('404 and opaque responses are not cached', async () => {
