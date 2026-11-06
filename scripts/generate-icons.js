@@ -29,14 +29,15 @@ const glyph = `
   <path d="M327 300v76" fill="none" stroke="${GOLD_DARK}" stroke-width="10" stroke-linecap="round"/>
 `;
 
-const svg = ({ maskable }) => {
+const svg = ({ maskable, square }) => {
   // Maskable: full-bleed square, glyph scaled about the centre to sit well
   // inside the central safe zone (circle of radius 40% of the canvas).
+  // Farthest glyph point is ~197px from centre vs the 205px safe radius at 512.
   const s = 0.86;
   const body = maskable
     ? `<rect width="512" height="512" fill="${GREEN}"/>
        <g transform="translate(256 256) scale(${s}) translate(-252 -248)">${glyph}</g>`
-    : `<rect width="512" height="512" rx="112" fill="${GREEN}"/>
+    : `<rect width="512" height="512"${square ? '' : ' rx="112"'} fill="${GREEN}"/>
        <g transform="translate(4 8)">${glyph}</g>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">${body}</svg>`;
 };
@@ -50,9 +51,11 @@ const render = (markup, size, file) => {
 
 const root = path.resolve(__dirname, '..');
 const any = svg({ maskable: false });
-render(any, 180, path.join(root, 'public/icons/icon-180.png'));
+// Opaque full-bleed square for apple-touch and app-store icons (no transparent corners).
+const square = svg({ maskable: false, square: true });
+render(square, 180, path.join(root, 'public/icons/icon-180.png'));
 render(any, 192, path.join(root, 'public/icons/icon-192.png'));
 render(any, 512, path.join(root, 'public/icons/icon-512.png'));
 render(svg({ maskable: true }), 512, path.join(root, 'public/icons/icon-maskable-512.png'));
-render(any, 1024, path.join(root, 'assets/icon.png'));
+render(square, 1024, path.join(root, 'assets/icon.png'));
 render(any, 48, path.join(root, 'assets/favicon.png'));
