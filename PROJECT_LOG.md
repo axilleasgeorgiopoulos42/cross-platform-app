@@ -46,6 +46,7 @@ Session B (this log's first session):
 19. "Prossed" (proceed) -> final self-review of `feat/dates-and-search` (jest 116 pass, tsc + lint clean, no blocking findings); pushed the branch for a Vercel preview. `main` untouched; section 7 manual checks are the user's.
 20. "merge it" -> merged `feat/dates-and-search` into `main` (`d02278b`), pushed; production redeploys. Manual checks were not confirmed by the user before merge.
 23. "start the PWA spec" (sub-project B of the Expenses redesign; entries 21-22 are on `feat/expenses-redesign`, PR #1) -> brainstormed on branch `feat/pwa-install` (from `main`): full offline with silent updates, generated Sage icon, name "Planner", dependency-free approach (post-export script writes `dist/sw.js` and injects head tags). Spec: `docs/superpowers/specs/2026-11-06-pwa-install-design.md`. Awaiting the user's spec review before writing the plan. Note: iPhone home-screen apps have storage separate from Safari (use Backup export/import once).
+24. "Implement the PWA plan" -> built on `feat/pwa-install`: `public/` manifest and icons, `scripts/pwa/*` pure helpers with tests, `scripts/pwa-postbuild.js` (writes `dist/sw.js`, injects head tags), `registerServiceWorker` (web/native pair) called from `app/_layout.tsx`, `vercel.json` build command and `sw.js`/manifest headers, README/ARCHITECTURE/DEVELOPMENT docs. Real `expo export` + post-build ran clean (Expo copies `public/` into `dist/`, so no copy fallback was needed). Not pushed; no browser or iPhone test was possible, so section 7 PWA checks are the user's.
 
 ## 4. Plan v2 execution record (branch `feat/v2-screens-features`, base `7ecfac1`)
 
@@ -97,6 +98,16 @@ Verification state: `npx jest`, `npx tsc --noEmit`, `npx expo lint`, `npx expo e
 - Small: `.gitignore` blanket `.env*`; settingsService `this.get` pattern; migration v2 step could be one transaction; `tsconfig` `types: ["jest","node"]` makes jest globals visible in app code; fetch failure on detail screens shows "Not found".
 
 ## 7. Next steps and manual checks (owner: the user, on a Vercel preview, with throwaway data)
+
+PWA install (branch `feat/pwa-install`; run on the Vercel preview, then production):
+
+1. Open the preview in Safari, Share > Add to Home Screen: label is "Planner", icon is the green tile.
+2. Launch from the home screen: full-screen, no Safari bars, content not hidden by the notch or home bar, light and dark themes correct.
+3. Add a transaction, enable airplane mode, force-quit, relaunch: the app opens and the transaction is still there.
+4. Deploy a trivial change, launch online once, force-quit, relaunch: the new version shows with no prompt.
+5. Settings > Backup export in Safari, import in the installed app: data appears.
+
+Risk: the home-screen app has its own storage, separate from Safari; nothing carries over except via Backup export/import (also in README).
 
 Dates and search (branch `feat/dates-and-search`, not yet pushed; the controller pushes after the final review, which creates the preview; do not merge to `main` before these pass):
 
