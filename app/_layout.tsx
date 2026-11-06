@@ -6,6 +6,7 @@ import { useTheme } from '../src/hooks/useTheme';
 import { getDb } from '../src/db/client';
 import { runMigrations } from '../src/db/migrations';
 import { useSettingsStore } from '../src/domains/settings/store';
+import { registerServiceWorker } from '../src/lib/registerServiceWorker';
 
 // Deep links / reloads on a detail screen get the tabs underneath (back button works).
 // SDK 58 expo-router deprecates `initialRouteName` in favour of `anchor`.
@@ -16,6 +17,10 @@ export default function RootLayout() {
   const settingsLoaded = useSettingsStore((s) => s.loaded);
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
+
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
 
   useEffect(() => {
     (async () => {

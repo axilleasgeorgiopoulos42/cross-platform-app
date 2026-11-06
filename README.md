@@ -35,7 +35,11 @@ npx expo export --platform web   # production web build into dist/
 
 ## Install on an iPhone
 
-Open the deployed link in Safari (production: https://cross-platform-app-navy.vercel.app), tap Share, then **Add to Home Screen**.
+Open the deployed link in Safari (production: https://cross-platform-app-navy.vercel.app), tap Share, then **Add to Home Screen**. Keep the name **Planner** and tap Add.
+
+The home-screen app opens full-screen and is designed to work offline once the first launch has finished its initial download (stay online until it has loaded). Updates are silent: a new version downloads in the background and must finish before the app is closed, so it may take one or two launches to appear. There is no prompt.
+
+**The home-screen app has its own storage, separate from Safari.** Data you entered in a Safari tab will not appear in the installed app. To move it, open Settings > Backup and export in Safari, then import that file once in the home-screen app.
 
 ## Your data
 

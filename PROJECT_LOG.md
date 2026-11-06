@@ -47,6 +47,8 @@ Session B (this log's first session):
 20. "merge it" -> merged `feat/dates-and-search` into `main` (`d02278b`), pushed; production redeploys. Manual checks were not confirmed by the user before merge.
 21. "Redesign Expenses: a graph by range (default monthly, daily bars) and an expandable per-category list; also make it a phone app via PWA, as a separate sub-project" -> brainstormed decisions A/B/A (presets with a stepper and chart granularity by length; categories expand inline; one filtered array feeds chart, summary and list). Spec `docs/superpowers/specs/2026-11-05-expenses-redesign-design.md` (`05b170f`), plan `docs/superpowers/plans/2026-11-05-expenses-redesign.md` (`dde8af5`). Built on `feat/expenses-redesign` with subagent-driven development: range model `00fde21`; chart bucketing `f9c2caa` + `293e83b` (shared `calendarDayCount` in `src/lib/dates.ts`); `groupByCategory` `ed25efa`; `RangePicker` `8b8790a`; `SpendChart` `9be3777` (exports pure `barHeight`); `CategoryList` `7185e69`, `3f73a02`, `e94defd` (pure `categoryRowLabel`); redesigned screen `9c6dda7` (`CategoryBreakdown` deleted; `MonthSwitcher`/`filterByMonth` kept, unused by the screen); docs (this entry's commit). Not pushed or merged. PWA is the next sub-project, not started.
 22. Final review of `feat/expenses-redesign` found income entries unreachable (only `TransactionItem` route was via expense groups) and unbounded chart buckets for long custom ranges -> fix wave: year granularity (>1100 days) and `validateRange` minimum year 1900 (`21c9044`), expandable Income section in `CategoryList` with `incomeEntries` and an any-transaction empty state (`79e4eed`), Custom re-tap re-seeds drafts (`ce99914`), docs corrected. Gate: jest, tsc, lint, web export.
+23. "start the PWA spec" (sub-project B of the Expenses redesign; entries 21-22 are on `feat/expenses-redesign`, PR #1) -> brainstormed on branch `feat/pwa-install` (from `main`): full offline with silent updates, generated Sage icon, name "Planner", dependency-free approach (post-export script writes `dist/sw.js` and injects head tags). Spec: `docs/superpowers/specs/2026-11-06-pwa-install-design.md`. Awaiting the user's spec review before writing the plan. Note: iPhone home-screen apps have storage separate from Safari (use Backup export/import once).
+24. "Yes subagent driven, continue" -> built on `feat/pwa-install`: `public/` manifest and icons, `scripts/pwa/*` pure helpers with tests, `scripts/pwa-postbuild.js` (writes `dist/sw.js`, injects head tags), `registerServiceWorker` (web/native pair) called from `app/_layout.tsx`, `vercel.json` build command and `sw.js`/manifest headers, README/ARCHITECTURE/DEVELOPMENT docs. Real `expo export` + post-build ran clean (Expo copies `public/` into `dist/`, so no copy fallback was needed). Not pushed; no browser or iPhone test was possible, so section 7 PWA checks are the user's. Final review fix wave: the worker now rejects (install) and refuses to cache (runtime) `text/html` responses for non-HTML URLs, since the SPA rewrite masks missing assets; README/ARCHITECTURE corrections; DEVELOPMENT "Recovering from a bad deploy" recipe. Follow-ups: Feather-only icon import (cuts ~4.4 MB of unused vector-icon fonts from the 6.4 MB precache), `<title>` still "cross-platform-app", the coin glyph shows "$", and Safari COEP-credentialless / blob-worker interception is unverified (manual check 3 is the gate).
 
 ## 4. Plan v2 execution record (branch `feat/v2-screens-features`, base `7ecfac1`)
 
@@ -111,6 +113,16 @@ Expenses redesign (branch `feat/expenses-redesign`, not yet pushed; push creates
 7. Dark theme and phone width.
 8. Add an income item, open it from the Income section (expand the Income row), edit it, then delete it.
 9. Custom range: type a From year like 2026 on desktop (no freeze; years before 1900 show the error); a multi-decade range shows yearly bars.
+
+PWA install (branch `feat/pwa-install`; run on the Vercel preview, then production):
+
+1. Open the preview in Safari, Share > Add to Home Screen: label is "Planner", icon is the green tile.
+2. Launch from the home screen: full-screen, no Safari bars, content not hidden by the notch or home bar, light and dark themes correct.
+3. Add a transaction, enable airplane mode, force-quit, relaunch: the app opens and the transaction is still there.
+4. Deploy a trivial change, launch online once, force-quit, relaunch: the new version shows with no prompt.
+5. Settings > Backup export in Safari, import in the installed app: data appears.
+
+Risk: the home-screen app has its own storage, separate from Safari; nothing carries over except via Backup export/import (also in README).
 
 Dates and search (branch `feat/dates-and-search`, not yet pushed; the controller pushes after the final review, which creates the preview; do not merge to `main` before these pass):
 
