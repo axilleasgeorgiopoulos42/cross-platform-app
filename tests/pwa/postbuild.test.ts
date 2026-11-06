@@ -101,4 +101,23 @@ describe('buildPwa', () => {
     write('assets/big.bin', Buffer.alloc(26 * 1024 * 1024));
     expect(() => buildPwa(dir)).toThrow(/25 MB/);
   });
+
+  it('ignores .map files for the size cap, count and bytes', () => {
+    makeFixture();
+    const base = buildPwa(dir);
+    write('assets/big.js.map', Buffer.alloc(26 * 1024 * 1024));
+    const r = buildPwa(dir);
+    expect(r.count).toBe(base.count);
+    expect(r.bytes).toBe(base.bytes);
+  });
+
+  it('leaves .map files and metadata.json out of sw.js', () => {
+    makeFixture();
+    write('assets/app.js.map', '{}');
+    write('metadata.json', '{}');
+    buildPwa(dir);
+    const sw = read('sw.js');
+    expect(sw).not.toContain('app.js.map');
+    expect(sw).not.toContain('metadata.json');
+  });
 });

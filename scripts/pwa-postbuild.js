@@ -47,10 +47,15 @@ function buildPwa(distDir) {
   }
 
   const hash = crypto.createHash('sha256');
+  const precached = new Set(urls);
   let bytes = 0;
+  let count = 0;
   for (const rel of files) {
     const data = rel === 'index.html' ? injectedHtml : fs.readFileSync(path.join(distDir, rel));
-    bytes += data.length;
+    if (precached.has('/' + rel)) {
+      bytes += data.length;
+      count += 1;
+    }
     hash.update(rel);
     hash.update('\0');
     hash.update(data);
@@ -65,7 +70,7 @@ function buildPwa(distDir) {
   fs.writeFileSync(path.join(distDir, 'index.html'), injectedHtml);
   fs.writeFileSync(path.join(distDir, 'sw.js'), buildServiceWorker(version, urls));
 
-  return { version, count: files.length, bytes };
+  return { version, count, bytes };
 }
 
 module.exports = { buildPwa };
