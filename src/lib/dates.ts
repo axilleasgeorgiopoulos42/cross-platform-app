@@ -55,3 +55,12 @@ export function monthOf(ts: number): { year: number; month: number } {
   const d = new Date(ts);
   return { year: d.getFullYear(), month: d.getMonth() };
 }
+
+/** Number of local calendar days from `from` to `to` inclusive (DST-safe). */
+export function calendarDayCount(from: number, to: number): number {
+  const a = new Date(from);
+  const b = new Date(to);
+  const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const ub = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((ub - ua) / 86400000) + 1;
+}
